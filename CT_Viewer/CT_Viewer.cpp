@@ -1,6 +1,9 @@
 #include "CT_Viewer.h"
 #include <QFileDialog.h>
+#include <QDebug>
 #include "vtkHelper.h"
+#include "itkHelper.h"
+#include "uiHelper.h"
 #include <qpushbutton.h>
 #include <qmessagebox.h>
 
@@ -23,6 +26,7 @@ CT_Viewer::CT_Viewer(QWidget *parent)
     connect(ui.addButton, SIGNAL(clicked()), this, SLOT(handleAdd()));
     connect(ui.clearButton, SIGNAL(clicked()), this, SLOT(handleClear()));
     connect(ui.confirmButton, SIGNAL(clicked()), this, SLOT(handleConfirm()));
+    connect(ui.detailButton, SIGNAL(clicked()), this, SLOT(handleDetail()));
 }
 
 void CT_Viewer::loadCT()
@@ -35,7 +39,11 @@ void CT_Viewer::loadCT()
     this->filename = QFileDialog::getExistingDirectory(this, "CT file directory", "../");
     this->ctImage = readCT(this->filename.toStdString().c_str());
     this->updatedImage = readCT(this->filename.toStdString().c_str());
+    
+    this->dicomMetaDictionary = getMetaInfoFromCTFile(this->filename.toStdString().c_str());
+    displayMetaInfo(ui, dicomMetaDictionary);
     this->CT_uploaded = true;
+
     
     // create 3D volume and add to window
     this->ren[3] = createRender3D(this->ctImage);
@@ -93,5 +101,13 @@ void CT_Viewer::handleClear()
     this->updatedImage = readCT(this->filename.toStdString().c_str());
     QMessageBox msgBox;
     msgBox.setText("Clear!");
+    msgBox.exec();
+}
+
+void CT_Viewer::handleDetail()
+{
+    QMessageBox msgBox;
+    QString detailText = displayDetails(this->dicomMetaDictionary);
+    msgBox.setText(detailText);
     msgBox.exec();
 }

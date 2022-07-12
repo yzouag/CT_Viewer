@@ -9,6 +9,8 @@
 #include <vtkImageReslice.h>
 #include <vtkBoxWidget.h>
 #include <vtkActor.h>
+#include <QMap>
+#include <QString>
 
 class CT_Viewer : public QMainWindow
 {
@@ -20,6 +22,7 @@ public:
 private:
     bool CT_uploaded = false;
     QString filename;
+    QMap<QString, QString> dicomMetaDictionary;
     Ui::CT_ViewerClass ui;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renWin3D;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renWin[3];
@@ -36,4 +39,5 @@ private slots:
     void handleAdd();
     void handleConfirm();
     void handleClear();
+    void handleDetail();
 };
