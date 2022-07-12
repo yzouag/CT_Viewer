@@ -1,0 +1,8 @@
+.*/
+*.sln
+*.db
+*.opendb
+CT*/
+!CT_Viewer/
+x64/
+*.vcxproj*
