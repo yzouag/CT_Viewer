@@ -20,7 +20,7 @@ public:
     CT_Viewer(QWidget *parent = Q_NULLPTR);
 
 private:
-    bool CT_uploaded = false;
+    bool CT_uploaded = false;     // CT_uploaded allows other buttons to function
     QString filename;
     QMap<QString, QString> dicomMetaDictionary;
     Ui::CT_ViewerClass ui;

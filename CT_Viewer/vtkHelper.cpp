@@ -58,7 +58,6 @@ vtkSmartPointer<vtkGenericOpenGLRenderWindow> createWindow(int x, int y)
 
 vtkSmartPointer<vtkRenderer> createRender3D(vtkSmartPointer<vtkImageData> ctImage)
 {
-    vtkNew<vtkNamedColors> colors;
     vtkNew<vtkPiecewiseFunction> opacityTransfunc;
     opacityTransfunc->AddPoint(70, 0.0);
     opacityTransfunc->AddPoint(90, 0.4);

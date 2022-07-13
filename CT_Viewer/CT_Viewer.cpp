@@ -40,11 +40,24 @@ void CT_Viewer::loadCT()
     this->ctImage = readCT(this->filename.toStdString().c_str());
     this->updatedImage = readCT(this->filename.toStdString().c_str());
     
-    this->dicomMetaDictionary = getMetaInfoFromCTFile(this->filename.toStdString().c_str());
-    displayMetaInfo(ui, dicomMetaDictionary);
+    // load CT using ITK and convert to VTK image data
+    CT_Data data = loadCTSeries(this->filename.toStdString().c_str());
+    
+    // check the path is valid
+    if (!data.loadSucceed) {
+        QMessageBox msgBox;
+        msgBox.setText("No Dicom Files in the directory or Loading Failed!");
+        msgBox.exec();
+        return;
+    }
+    //this->ctImage = data.CTImage;
+    //this->updatedImage = data.CTImage;
+    
+    // store meta data and display on labels
+    this->dicomMetaDictionary = data.metaInfo;
+    displayMetaInfo(ui, this->dicomMetaDictionary);
     this->CT_uploaded = true;
 
-    
     // create 3D volume and add to window
     this->ren[3] = createRender3D(this->ctImage);
     this->renWin3D->AddRenderer(this->ren[3]);
@@ -69,6 +82,9 @@ void CT_Viewer::handleAdd()
 
 void CT_Viewer::handleConfirm()
 {
+    if (!this->CT_uploaded) {
+        return;
+    }
     if (coneList.size() < 1) {
         QMessageBox msgBox;
         msgBox.setText("No cone is added!");
@@ -85,6 +101,9 @@ void CT_Viewer::handleConfirm()
 
 void CT_Viewer::handleClear()
 {
+    if (!this->CT_uploaded) {
+        return;
+    }
     if (coneList.size() >= 1) {
         for (int i = 0; i < coneList.size(); i++) {
             coneList[i]->SetEnabled(0);
@@ -106,6 +125,9 @@ void CT_Viewer::handleClear()
 
 void CT_Viewer::handleDetail()
 {
+    if (!this->CT_uploaded) {
+        return;
+    }
     QMessageBox msgBox;
     QString detailText = displayDetails(this->dicomMetaDictionary);
     msgBox.setText(detailText);

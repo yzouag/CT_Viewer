@@ -5,6 +5,19 @@
 #include <QMap>
 #include <QString>
 #include <string.h>
-QMap<QString, QString> getMetaInfoFromCTFile(const char* path);
+#include <itkSmartPointer.h>
+#include <itkGDCMImageIO.h>
+#include <vtkImageData.h>
+#include <vtkSmartPointer.h>
+
+struct CT_Data
+{
+    vtkSmartPointer<vtkImageData> CTImage;
+    QMap<QString, QString> metaInfo;
+    bool loadSucceed;
+};
+
+CT_Data loadCTSeries(const char* path);
+
 
 #endif
