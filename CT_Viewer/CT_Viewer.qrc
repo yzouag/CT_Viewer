@@ -1,4 +1,7 @@
 <RCC>
-    <qresource prefix="CT_Viewer">
+    <qresource prefix="/CT_Viewer">
+        <file>screwModels/scaled_475x30.vtk</file>
+        <file>screwModels/scaled_700x50.vtk</file>
+        <file>screwModels/screw head.vtk</file>
     </qresource>
 </RCC>

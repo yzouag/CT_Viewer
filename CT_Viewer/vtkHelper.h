@@ -19,7 +19,9 @@ vtkSmartPointer<vtkRenderer> createRender3D(vtkSmartPointer<vtkImageData> ctImag
 vtkSmartPointer<vtkRenderWindowInteractor> createAndBindInteractor(vtkRenderWindow* renWin);
 vtkSmartPointer<vtkRenderer> createRender2D(vtkImageReslice* ctReslice, vtkRenderWindow* renWin);
 vtkSmartPointer<vtkImageReslice> createReslice(vtkImageData* ctImage, int axis);
-void addCone(QVector<vtkSmartPointer<vtkBoxWidget>>& coneList, QVector<vtkSmartPointer<vtkActor>>& coneActorList, vtkRenderer* ren, vtkRenderWindowInteractor* interactor);
-vtkSmartPointer<vtkImageData> updateCTImage(vtkSmartPointer<vtkImageData> ctImage, QVector<vtkSmartPointer<vtkBoxWidget>>& coneList);
+void addCone(QVector<QPair<const char*, vtkSmartPointer<vtkBoxWidget>>>& coneList, QVector<vtkSmartPointer<vtkActor>>& coneActorList, vtkRenderer* ren, vtkRenderWindowInteractor* interactor);
+void addCustomScrew(const char* path, QVector<QPair<const char*, vtkSmartPointer<vtkBoxWidget>>>& coneList, QVector<vtkSmartPointer<vtkActor>>& coneActorList, vtkRenderer* ren, vtkRenderWindowInteractor* interactor);
+void addScrew(int model, QVector<QPair<const char*, vtkSmartPointer<vtkBoxWidget>>>& coneList, QVector<vtkSmartPointer<vtkActor>>& coneActorList, vtkRenderer* ren, vtkRenderWindowInteractor* interactor);
+vtkSmartPointer<vtkImageData> updateCTImage(vtkSmartPointer<vtkImageData> ctImage, QVector<QPair<const char*, vtkSmartPointer<vtkBoxWidget>>>& coneList);
 void updateRender2D(vtkImageReslice* ctReslice, vtkRenderWindow* renWin, vtkImageData* ctImage);
 #endif

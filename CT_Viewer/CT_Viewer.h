@@ -31,8 +31,8 @@ private:
     vtkSmartPointer<vtkRenderer> ren[4];
     vtkSmartPointer<vtkRenderWindowInteractor> interactor3D;
     vtkSmartPointer<vtkImageReslice> ctReslice[3];
-    QVector<vtkSmartPointer<vtkBoxWidget>> coneList;
-    QVector<vtkSmartPointer<vtkActor>> coneActorList;
+    QVector<QPair<const char*, vtkSmartPointer<vtkBoxWidget>>> screwList;
+    QVector<vtkSmartPointer<vtkActor>> screwActorList;
 
 private slots:
     void loadCT();

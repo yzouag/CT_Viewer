@@ -6,6 +6,7 @@
 #include "uiHelper.h"
 #include <qpushbutton.h>
 #include <qmessagebox.h>
+#include "ScrewOptionWidget.h"
 
 CT_Viewer::CT_Viewer(QWidget *parent)
     : QMainWindow(parent)
@@ -77,7 +78,14 @@ void CT_Viewer::handleAdd()
     if (!this->CT_uploaded) {
         return;
     }
-    addCone(this->coneList, this->coneActorList, this->ren[3], this->interactor3D);
+    ScrewOptionWidget widget;
+    widget.exec();
+    if (!widget.confirmAction()) {
+        return;
+    }
+    int model = widget.getSelectModel();
+    qDebug() << "select: " << model;
+    addScrew(model, this->screwList, this->screwActorList, this->ren[3], this->interactor3D);
 }
 
 void CT_Viewer::handleConfirm()
@@ -85,12 +93,12 @@ void CT_Viewer::handleConfirm()
     if (!this->CT_uploaded) {
         return;
     }
-    if (coneList.size() < 1) {
+    if (screwList.size() < 1) {
         QMessageBox msgBox;
         msgBox.setText("No cone is added!");
         msgBox.exec();
     }
-    this->updatedImage = updateCTImage(this->updatedImage, coneList);
+    this->updatedImage = updateCTImage(this->updatedImage, screwList);
     for (int i = 0; i < 3; i++) {
         updateRender2D(this->ctReslice[i], this->renWin[i], this->updatedImage);
     }
@@ -104,13 +112,13 @@ void CT_Viewer::handleClear()
     if (!this->CT_uploaded) {
         return;
     }
-    if (coneList.size() >= 1) {
-        for (int i = 0; i < coneList.size(); i++) {
-            coneList[i]->SetEnabled(0);
-            this->ren[3]->RemoveActor(coneActorList[i]);
+    if (screwList.size() >= 1) {
+        for (int i = 0; i < screwList.size(); i++) {
+            screwList[i].second->SetEnabled(0);
+            this->ren[3]->RemoveActor(screwActorList[i]);
         }
-        coneList.clear();
-        coneActorList.clear();
+        screwList.clear();
+        screwActorList.clear();
         for (int i = 0; i < 3; i++) {
             this->ctReslice[i]->SetInputData(0, this->ctImage);
             this->ctReslice[i]->Modified();

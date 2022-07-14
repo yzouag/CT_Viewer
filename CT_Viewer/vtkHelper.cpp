@@ -30,6 +30,9 @@ VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2);
 #include <vtkImageData.h>
 #include <vtkImageStencil.h>
 #include <vtkPolyDataToImageStencil.h>
+#include <vtkPolyDataReader.h>
+#include <vtkTransformPolyDataFilter.h>
+#include <QDebug>
 
 static double const VIEWDIRECTIONMATRIX[3][16] = {
         {0, 0,-1, 0,
@@ -147,14 +150,27 @@ public:
     }
 };
 
-void addCone(QVector<vtkSmartPointer<vtkBoxWidget>>& coneList, QVector<vtkSmartPointer<vtkActor>>& coneActorList,vtkRenderer* ren, vtkRenderWindowInteractor* interactor)
+vtkSmartPointer<vtkBoxWidget> createBoxWidget(vtkSmartPointer<vtkActor> actor, vtkRenderWindowInteractor* interactor)
+{
+    vtkNew<vtkBoxWidget> boxWidget;
+    boxWidget->SetInteractor(interactor);
+    boxWidget->SetProp3D(actor);
+    boxWidget->SetPlaceFactor(1.25);
+    boxWidget->PlaceWidget();
+    vtkNew<widgetCallback> callback;
+    boxWidget->AddObserver(vtkCommand::InteractionEvent, callback);
+    boxWidget->On();
+    return boxWidget;
+}
+
+void addCone(QVector<QPair<const char*, vtkSmartPointer<vtkBoxWidget>>>& coneList, QVector<vtkSmartPointer<vtkActor>>& coneActorList,vtkRenderer* ren, vtkRenderWindowInteractor* interactor)
 {
     vtkNew<vtkNamedColors> colors;
     
     // create the cone source
     vtkNew<vtkConeSource> cone;
-    cone->SetHeight(20.0);
-    cone->SetRadius(5.0);
+    cone->SetHeight(40.0);
+    cone->SetRadius(10.0);
     cone->SetResolution(100);
 
     // add source to mapper and then create actor
@@ -162,56 +178,79 @@ void addCone(QVector<vtkSmartPointer<vtkBoxWidget>>& coneList, QVector<vtkSmartP
     coneMapper->SetInputConnection(cone->GetOutputPort());
     vtkNew<vtkActor> coneActor;
     coneActor->SetMapper(coneMapper);
-    coneActor->GetProperty()->SetColor(colors->GetColor3d("Blue").GetData());
+    coneActor->GetProperty()->SetColor(colors->GetColor3d("DarkTurquoise").GetData());
     coneActor->GetProperty()->SetDiffuse(0.7);
     coneActor->GetProperty()->SetSpecular(0.4);
     coneActor->GetProperty()->SetSpecularPower(20);
     ren->AddActor(coneActor);
 
     // create box widget and attach to coneActor
-    vtkNew<vtkBoxWidget> boxWidget;
-    boxWidget->SetInteractor(interactor);
-    boxWidget->SetProp3D(coneActor);
-    boxWidget->SetPlaceFactor(1.25);
-    boxWidget->PlaceWidget();
-    vtkNew<widgetCallback> callback;
-    boxWidget->AddObserver(vtkCommand::InteractionEvent, callback);
-    boxWidget->On();
+    vtkSmartPointer<vtkBoxWidget> boxWidget = createBoxWidget(coneActor, interactor);
     
     // track the widget and actor
     coneActorList.push_back(coneActor);
-    coneList.push_back(boxWidget);
+    coneList.push_back(QPair<const char*, vtkSmartPointer<vtkBoxWidget>>{"cone", boxWidget});
 }
 
-vtkSmartPointer<vtkImageData> updateCTImage(vtkSmartPointer<vtkImageData> ctImage, QVector<vtkSmartPointer<vtkBoxWidget>>& coneList)
+void addCustomScrew(const char * path, QVector<QPair<const char*, vtkSmartPointer<vtkBoxWidget>>>& coneList, QVector<vtkSmartPointer<vtkActor>>& coneActorList, vtkRenderer * ren, vtkRenderWindowInteractor * interactor)
+{
+    // read the .vtk models in /screwModels
+    vtkNew<vtkPolyDataReader> reader;
+    reader->SetFileName(path);
+    vtkNew<vtkPolyDataMapper> mapper;
+    mapper->SetInputConnection(reader->GetOutputPort());
+    vtkNew<vtkActor> actor;
+    actor->SetMapper(mapper);
+    ren->AddActor(actor);
+
+    // create interactive widgets, disable the scaling (screw size should be fixed)
+    vtkSmartPointer<vtkBoxWidget> boxWidget = createBoxWidget(actor, interactor);
+    boxWidget->HandlesOff();
+    boxWidget->ScalingEnabledOff();
+    
+    coneActorList.push_back(actor);
+    coneList.push_back(QPair<const char*, vtkSmartPointer<vtkBoxWidget>>{path, boxWidget});
+}
+
+void addScrew(int model, QVector<QPair<const char*, vtkSmartPointer<vtkBoxWidget>>>& coneList, QVector<vtkSmartPointer<vtkActor>>& coneActorList, vtkRenderer * ren, vtkRenderWindowInteractor * interactor)
+{
+    switch (model) {
+    case 0:
+        addCone(coneList, coneActorList, ren, interactor);
+        break;
+    case 1:
+        addCustomScrew("./screwModels/scaled_475x30.vtk", coneList, coneActorList, ren, interactor);
+        break;
+    case 2:
+        addCustomScrew("./screwModels/scaled_700x50.vtk", coneList, coneActorList, ren, interactor);
+        break;
+    }
+}
+
+vtkSmartPointer<vtkImageData> updateCTImage(vtkSmartPointer<vtkImageData> ctImage, QVector<QPair<const char*, vtkSmartPointer<vtkBoxWidget>>>& coneList)
 {
     vtkSmartPointer<vtkImageData> currentImage = ctImage;
-    for (vtkBoxWidget* coneWidget : coneList) {
+
+    for (auto coneWidget : coneList) {
+        // get the geometry information of the bounding box widget
         vtkNew<vtkPolyData> pd;
-        coneWidget->GetPolyData(pd);
+        coneWidget.second->GetPolyData(pd);
         double pos[9][3];
         for (int i = 0; i < 8; i++) {
             pd->GetPoints()->GetPoint(i, pos[i]);
         }
-        pd->GetPoints()->GetPoint(8, pos[8]);
-        double height = std::sqrt(vtkMath::Distance2BetweenPoints(pos[0], pos[1]));
-        double radius = 0.5 * std::sqrt(vtkMath::Distance2BetweenPoints(pos[1], pos[2]));
-        vtkNew<vtkConeSource> coneSource;
-        coneSource->SetRadius(radius);
-        coneSource->SetHeight(height);
-        coneSource->SetDirection(pos[1][0] - pos[0][0], pos[1][1] - pos[0][1], pos[1][2] - pos[0][2]);
-        coneSource->SetResolution(500);
-        coneSource->Update();
+        pd->GetPoints()->GetPoint(14, pos[8]);
 
+        // create an empty image and set the size to be the same as the CT image
         vtkNew<vtkImageData> whiteImage;
         double spacing[3];
         ctImage->GetSpacing(spacing);
         whiteImage->SetSpacing(spacing);
         int extent[6];
-        ctImage->GetExtent(extent);
 
+        ctImage->GetExtent(extent);
         whiteImage->SetExtent(extent);
-        whiteImage->SetOrigin(-pos[8][0], -pos[8][1], -pos[8][2]);
+        whiteImage->SetOrigin(-pos[8][0], -pos[8][1], -pos[8][2]); // why there must be a minus sign????
         whiteImage->AllocateScalars(VTK_SHORT, 1);
 
         // fill the image with foreground voxels:
@@ -220,15 +259,43 @@ vtkSmartPointer<vtkImageData> updateCTImage(vtkSmartPointer<vtkImageData> ctImag
         vtkIdType count = whiteImage->GetNumberOfPoints();
         for (vtkIdType i = 0; i < count; ++i)
             whiteImage->GetPointData()->GetScalars()->SetTuple1(i, inval);
-
-        // polygonal data --> image stencil:
+        
+        // create a polygonal data to image stencil filter
         vtkNew<vtkPolyDataToImageStencil> pol2stenc;
-        pol2stenc->SetInputConnection(coneSource->GetOutputPort());
         pol2stenc->SetOutputOrigin(-pos[8][0], -pos[8][1], -pos[8][2]);
         pol2stenc->SetOutputSpacing(spacing);
         pol2stenc->SetOutputWholeExtent(extent);
-        pol2stenc->Update();
-
+        
+        // create the image source
+        if (strncmp(coneWidget.first, "cone", 5) == 0) {
+            double height = std::sqrt(vtkMath::Distance2BetweenPoints(pos[0], pos[1]));
+            double radius = 0.5 * std::sqrt(vtkMath::Distance2BetweenPoints(pos[1], pos[2]));
+            vtkNew<vtkConeSource> coneSource;
+            coneSource->SetRadius(radius);
+            coneSource->SetHeight(height);
+            coneSource->SetDirection(pos[1][0] - pos[0][0], pos[1][1] - pos[0][1], pos[1][2] - pos[0][2]);
+            coneSource->SetResolution(500);
+            coneSource->Update();
+            // polygonal data --> image stencil:
+            pol2stenc->SetInputConnection(coneSource->GetOutputPort());
+        }
+        else {
+            vtkNew<vtkPolyDataReader> reader;
+            reader->SetFileName(coneWidget.first);
+            double orientation[3];
+            vtkNew<vtkTransform> temp;
+            coneWidget.second->GetTransform(temp);
+            temp->GetOrientation(orientation);
+            vtkNew<vtkTransform> t;
+            t->RotateZ(orientation[2]);
+            t->RotateX(orientation[0]);
+            t->RotateY(orientation[1]);
+            vtkNew<vtkTransformPolyDataFilter> transformFilter;
+            transformFilter->SetTransform(t);
+            transformFilter->SetInputConnection(reader->GetOutputPort());
+            pol2stenc->SetInputConnection(transformFilter->GetOutputPort());
+        }
+        
         // cut the corresponding white image and set the background:
         vtkNew<vtkImageStencil> imgstenc;
         imgstenc->SetInputData(whiteImage);
