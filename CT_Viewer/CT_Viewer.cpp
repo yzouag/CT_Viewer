@@ -32,17 +32,20 @@ CT_Viewer::CT_Viewer(QWidget *parent)
 
 void CT_Viewer::loadCT()
 {
+    ui.statusBar->showMessage("Loading CT...");
     if (this->ren[0] != nullptr) {
         this->renWin3D->RemoveRenderer(this->ren[0]);
     }
     
     // load file directory
     this->filename = QFileDialog::getExistingDirectory(this, "CT file directory", "../");
-    this->ctImage = readCT(this->filename.toStdString().c_str());
-    this->updatedImage = readCT(this->filename.toStdString().c_str());
+    QProgressDialog* progressDialog = createProgressDialog(tr("CT Loading"), tr("Loading CT, Please Wait..."), 100);
+    this->ctImage = readCT(this->filename.toStdString().c_str(), progressDialog);
+    this->updatedImage = readCT(this->filename.toStdString().c_str(), progressDialog);
     
     // load CT using ITK and convert to VTK image data
-    CT_Data data = loadCTSeries(this->filename.toStdString().c_str());
+    QProgressDialog* progressMetaDialog = createProgressDialog(tr("CT Loading"), tr("Loading meta information, Please Wait..."), 100);
+    CT_Data data = loadCTSeries(this->filename.toStdString().c_str(), progressMetaDialog);
     
     // check the path is valid
     if (!data.loadSucceed) {
@@ -61,6 +64,7 @@ void CT_Viewer::loadCT()
 
     // create 3D volume and add to window
     this->ren[3] = createRender3D(this->ctImage);
+    setHeader(this->ren[3], 3);
     this->renWin3D->AddRenderer(this->ren[3]);
     this->interactor3D = createAndBindInteractor(this->renWin3D); // set trackball camera style
     this->renWin3D->Render();
@@ -69,8 +73,12 @@ void CT_Viewer::loadCT()
     for (int i = 0; i < 3; i++) {
         this->ctReslice[i] = createReslice(this->ctImage, i);
         this->ren[i] = createRender2D(this->ctReslice[i], this->renWin[i]);
+        setHeader(this->ren[i], i);
         this->renWin[i]->Render();
     }
+    progressDialog->deleteLater();
+    progressMetaDialog->deleteLater();
+    ui.statusBar->clearMessage();
 }
 
 void CT_Viewer::handleAdd()
@@ -95,15 +103,18 @@ void CT_Viewer::handleConfirm()
     }
     if (screwList.size() < 1) {
         QMessageBox msgBox;
-        msgBox.setText("No cone is added!");
+        msgBox.setText("No Screw Is Added!");
         msgBox.exec();
     }
+    
+    // TODO: UNDO and REDO
     this->updatedImage = updateCTImage(this->updatedImage, screwList);
+    
     for (int i = 0; i < 3; i++) {
         updateRender2D(this->ctReslice[i], this->renWin[i], this->updatedImage);
     }
     QMessageBox msgBox;
-    msgBox.setText("Cones Are Added!");
+    msgBox.setText("Screws Are Updated!");
     msgBox.exec();
 }
 
@@ -125,7 +136,7 @@ void CT_Viewer::handleClear()
             this->renWin[i]->Render();
         }
     }
-    this->updatedImage = readCT(this->filename.toStdString().c_str());
+    this->updatedImage->DeepCopy(this->ctImage);
     QMessageBox msgBox;
     msgBox.setText("Clear!");
     msgBox.exec();

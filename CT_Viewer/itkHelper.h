@@ -4,6 +4,7 @@
 
 #include <QMap>
 #include <QString>
+#include <QProgressDialog>
 #include <string.h>
 #include <itkSmartPointer.h>
 #include <itkGDCMImageIO.h>
@@ -17,7 +18,7 @@ struct CT_Data
     bool loadSucceed;
 };
 
-CT_Data loadCTSeries(const char* path);
+CT_Data loadCTSeries(const char* path, QProgressDialog* dialog);
 
 
 #endif

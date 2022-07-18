@@ -4,6 +4,7 @@
 #include "itkGDCMSeriesFileNames.h"
 #include "itkImageFileWriter.h"
 #include "itkImageToVTKImageFilter.h"
+#include "itkCommand.h"
 
 QMap<QString, QString> getMetaInfoFromCTFile(itk::SmartPointer<itk::GDCMImageIO> dicomIO)
 {
@@ -38,7 +39,39 @@ QMap<QString, QString> getMetaInfoFromCTFile(itk::SmartPointer<itk::GDCMImageIO>
     return map;
 }
 
-CT_Data loadCTSeries(const char * path)
+class CommandProgressUpdate : public itk::Command
+{
+public:
+    typedef  CommandProgressUpdate   Self;
+    typedef  itk::Command            Superclass;
+    typedef  itk::SmartPointer<Self> Pointer;
+    itkNewMacro(Self);
+protected:
+    CommandProgressUpdate()
+    {
+    };
+public:
+    void Execute(itk::Object *caller, const itk::EventObject & event)
+    {
+        Execute((const itk::Object *)caller, event);
+    }
+    void Execute(const itk::Object * object, const itk::EventObject & event)
+    {
+        const itk::ProcessObject * filter = dynamic_cast<const itk::ProcessObject *>(object);
+        if (!itk::ProgressEvent().CheckEvent(&event)) {
+            return;
+        }
+        this->dialog->setValue(static_cast<int>(filter->GetProgress() * 100));
+    }
+    void setProgressDialog(QProgressDialog* dialog)
+    {
+        this->dialog = dialog;
+    }
+private:
+    QProgressDialog* dialog;
+};
+
+CT_Data loadCTSeries(const char * path, QProgressDialog* dialog)
 {
     // initialize return value, set status to false
     CT_Data result;
@@ -81,6 +114,9 @@ CT_Data loadCTSeries(const char * path)
     reader->SetImageIO(dicomIO);
     reader->SetFileNames(fileNames);
     reader->ForceOrthogonalDirectionOff();
+    CommandProgressUpdate::Pointer observer = CommandProgressUpdate::New();
+    observer->setProgressDialog(dialog);
+    reader->AddObserver(itk::ProgressEvent(), observer);
     try {
         reader->Update();
     }
@@ -93,17 +129,17 @@ CT_Data loadCTSeries(const char * path)
     result.metaInfo = getMetaInfoFromCTFile(dicomIO);
 
     // transform itk data to vtk data
-    using FilterType = itk::ImageToVTKImageFilter<ImageType>;
-    auto filter = FilterType::New();
-    filter->SetInput(reader->GetOutput());
-    try {
-        filter->Update();
-    }
-    catch (const itk::ExceptionObject & error) {
-        std::cerr << "Error: " << error << std::endl;
-        return result;
-    }
-    result.CTImage = filter->GetOutput();
+    //using FilterType = itk::ImageToVTKImageFilter<ImageType>;
+    //auto filter = FilterType::New();
+    //filter->SetInput(reader->GetOutput());
+    //try {
+    //    filter->Update();
+    //}
+    //catch (const itk::ExceptionObject & error) {
+    //    std::cerr << "Error: " << error << std::endl;
+    //    return result;
+    //}
+    //result.CTImage = filter->GetOutput();
     
     // if all loading succeeds, set status to True and return the result
     result.loadSucceed = true;

@@ -1,7 +1,11 @@
+// these initializations are needed for compiling project using Visual Studio but not using cmake
 #include <vtkAutoInit.h> 
-VTK_MODULE_INIT(vtkRenderingOpenGL2); // VTK was built with vtkRenderingOpenGL2
+VTK_MODULE_INIT(vtkRenderingOpenGL2);
 VTK_MODULE_INIT(vtkInteractionStyle);
 VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2);
+VTK_MODULE_INIT(vtkRenderingFreeType);
+
+// start of the header files
 #include "vtkHelper.h"
 #include <vtkNew.h>
 #include <vtkDICOMImageReader.h>
@@ -32,6 +36,9 @@ VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2);
 #include <vtkPolyDataToImageStencil.h>
 #include <vtkPolyDataReader.h>
 #include <vtkTransformPolyDataFilter.h>
+#include <vtkCursor2D.h>
+#include <vtkCoordinate.h>
+#include <vtkTextProperty.h>
 #include <QDebug>
 
 static double const VIEWDIRECTIONMATRIX[3][16] = {
@@ -282,10 +289,14 @@ vtkSmartPointer<vtkImageData> updateCTImage(vtkSmartPointer<vtkImageData> ctImag
         else {
             vtkNew<vtkPolyDataReader> reader;
             reader->SetFileName(coneWidget.first);
+            
+            // get the orientation of the screw added
             double orientation[3];
-            vtkNew<vtkTransform> temp;
-            coneWidget.second->GetTransform(temp);
-            temp->GetOrientation(orientation);
+            vtkNew<vtkTransform> targetTransform;
+            coneWidget.second->GetTransform(targetTransform);
+            targetTransform->GetOrientation(orientation);
+            
+            // add the orientation to the polygonal data
             vtkNew<vtkTransform> t;
             t->RotateZ(orientation[2]);
             t->RotateX(orientation[0]);
@@ -293,6 +304,8 @@ vtkSmartPointer<vtkImageData> updateCTImage(vtkSmartPointer<vtkImageData> ctImag
             vtkNew<vtkTransformPolyDataFilter> transformFilter;
             transformFilter->SetTransform(t);
             transformFilter->SetInputConnection(reader->GetOutputPort());
+
+            // polygonal data --> image stencil
             pol2stenc->SetInputConnection(transformFilter->GetOutputPort());
         }
         
@@ -321,6 +334,34 @@ void updateRender2D(vtkImageReslice * ctReslice, vtkRenderWindow * renWin, vtkIm
     ctReslice->SetInputData(0, ctImage);
     ctReslice->Modified();
     renWin->Render();
+}
+
+void setHeader(vtkRenderer * ren, int axis)
+{
+    vtkNew<vtkNamedColors> colors;
+    vtkNew<vtkCornerAnnotation> cornerAnnotation;
+    cornerAnnotation->GetTextProperty()->SetFontFamilyToArial();
+    cornerAnnotation->GetTextProperty()->BoldOn();
+    cornerAnnotation->GetTextProperty()->SetFontSize(20);
+    cornerAnnotation->GetTextProperty()->SetColor(colors->GetColor3d("Azure").GetData());
+    cornerAnnotation->SetLinearFontScaleFactor(2);
+    cornerAnnotation->SetNonlinearFontScaleFactor(1);
+    cornerAnnotation->SetMaximumFontSize(20);
+    switch (axis) {
+    case 0:
+        cornerAnnotation->SetText(2, "Sagittal");
+        break;
+    case 1:
+        cornerAnnotation->SetText(2, "Coronal");
+        break;
+    case 2:
+        cornerAnnotation->SetText(2, "Axial");
+        break;
+    case 3:
+        cornerAnnotation->SetText(2, "3D View");
+        break;
+    }
+    ren->AddViewProp(cornerAnnotation);
 }
 
 class ctResliceCallback : public vtkCommand
@@ -404,9 +445,70 @@ private:
     vtkImageData* OutputImageData;
 };
 
+class vtkImageInteractionCallback : public vtkCommand
+{
+public:
+    static vtkImageInteractionCallback* New()
+    {
+        return new vtkImageInteractionCallback;
+    }
+
+    void setCursor(vtkSmartPointer<vtkCursor2D> cursor)
+    {
+        this->cursor = cursor;
+    }
+
+    void setInteractor(vtkSmartPointer<vtkRenderWindowInteractor> interactor)
+    {
+        this->interactor = interactor;
+    }
+
+    void setRender(vtkSmartPointer<vtkRenderer> render)
+    {
+        this->ren = render;
+    }
+
+    void Execute(vtkObject* caller, unsigned long eventId, void* callData) override
+    {
+        if (eventId == vtkCommand::LeftButtonPressEvent) {
+            isToggled = true;
+        } else if (eventId == vtkCommand::LeftButtonReleaseEvent) {
+            isToggled = false;
+            int pos[2];
+            this->interactor->GetEventPosition(pos);
+            vtkNew<vtkCoordinate> coordinateSystem;
+            coordinateSystem->SetCoordinateSystemToDisplay();
+            coordinateSystem->SetValue(1.0*pos[0], 1.0*pos[1]);
+            double* worldPos = coordinateSystem->GetComputedWorldValue(this->ren);
+            this->cursor->SetFocalPoint(worldPos);
+            this->cursor->Modified();
+            this->interactor->Render();
+        } else {
+            if (!isToggled) {
+                return;
+            }
+            int pos[2];
+            this->interactor->GetEventPosition(pos);
+            vtkNew<vtkCoordinate> coordinateSystem;
+            coordinateSystem->SetCoordinateSystemToDisplay();
+            coordinateSystem->SetValue(1.0*pos[0], 1.0*pos[1]);
+            double* worldPos = coordinateSystem->GetComputedWorldValue(this->ren);
+            this->cursor->SetFocalPoint(worldPos);
+            this->cursor->Modified();
+            this->interactor->Render();
+        }
+    }
+
+private:
+    vtkSmartPointer<vtkCursor2D> cursor;
+    vtkSmartPointer<vtkRenderWindowInteractor> interactor;
+    vtkSmartPointer<vtkRenderer> ren;
+    bool isToggled = false;
+};
+
 vtkSmartPointer<vtkRenderer> createRender2D(vtkImageReslice * ctReslice, vtkRenderWindow* renWin)
 {
-    vtkNew<vtkRenderer> ren;
+    // define look up table and create the image actor
     vtkNew<vtkLookupTable> lookupTable;
     lookupTable->SetRange(0, 255);
     lookupTable->SetValueRange(0.0, 1.0);
@@ -421,15 +523,40 @@ vtkSmartPointer<vtkRenderer> createRender2D(vtkImageReslice * ctReslice, vtkRend
 
     vtkNew<vtkImageActor> imageActor;
     imageActor->GetMapper()->SetInputConnection(mapToColors->GetOutputPort());
+    
+    // create 2D cursor cross lines
+    vtkNew<vtkCursor2D> cursor;
+    double bounds[6];
+    mapToColors->GetOutput()->GetBounds(bounds);
+    cursor->SetModelBounds(bounds);
+    cursor->AllOn();
+    cursor->OutlineOff();
+    cursor->SetFocalPoint(0, 0, 0);
+    cursor->Update();
+
+    vtkNew<vtkPolyDataMapper> cursorMapper;
+    cursorMapper->SetInputConnection(cursor->GetOutputPort());
+    vtkNew<vtkActor> cursorActor;
+    cursorActor->GetProperty()->SetColor(200, 50, 0);
+    cursorActor->SetMapper(cursorMapper);
+    double pos[3];
+    imageActor->GetPosition(pos);
+    cursorActor->SetPosition(pos[0], pos[1], pos[2] + 1);
+    
+    // create render and add actors to the render
+    vtkNew<vtkRenderer> ren;
     ren->AddActor(imageActor);
+    ren->AddActor(cursorActor);
     ren->ResetCamera();
 
+    // add render to the render window, create interactions
     renWin->AddRenderer(ren);
     vtkNew<vtkRenderWindowInteractor> interactor;
     interactor->SetRenderWindow(renWin);
     vtkNew<vtkInteractorStyleImage> imageStyle;
     interactor->SetInteractorStyle(imageStyle);
 
+    // define logics for reslice the model
     vtkNew<ctResliceCallback> callback;
     callback->SetImageReslice(ctReslice);
     callback->SetMapToColors(mapToColors);
@@ -439,16 +566,49 @@ vtkSmartPointer<vtkRenderer> createRender2D(vtkImageReslice * ctReslice, vtkRend
     imageStyle->AddObserver(vtkCommand::RightButtonPressEvent, callback);
     imageStyle->AddObserver(vtkCommand::RightButtonReleaseEvent, callback);
     imageStyle->AddObserver(vtkCommand::MouseMoveEvent, callback);
+
+    vtkNew<vtkImageInteractionCallback> cursorCallback;
+    cursorCallback->setCursor(cursor);
+    cursorCallback->setInteractor(interactor);
+    cursorCallback->setRender(ren);
+
+    imageStyle->AddObserver(vtkCommand::LeftButtonPressEvent, cursorCallback);
+    imageStyle->AddObserver(vtkCommand::LeftButtonReleaseEvent, cursorCallback);
+    imageStyle->AddObserver(vtkCommand::MouseMoveEvent, cursorCallback);
     return ren;
 }
 
-vtkSmartPointer<vtkImageData> readCT(const char * filePath)
+class ReadCTProgressUpdate : public vtkCommand
+{
+public:
+    static ReadCTProgressUpdate* New()
+    {
+        return new ReadCTProgressUpdate;
+    }
+    void setDialog(QProgressDialog* dialog)
+    {
+        this->dialog = dialog;
+    }
+    virtual void Execute(vtkObject*caller, unsigned long eventId, void* callData)
+    {
+        double* progress = static_cast<double*>(callData);
+        this->dialog->setValue((int)(*progress*100));
+    }
+private:
+    QProgressDialog* dialog;
+};
+
+vtkSmartPointer<vtkImageData> readCT(const char * filePath, QProgressDialog* dialog)
 {
     // read in DICOM file
     vtkNew<vtkDICOMImageReader> reader;
     reader->SetDirectoryName(filePath);
     reader->SetDataSpacing(3.2, 3.2, 1.5);
     reader->SetDataByteOrderToLittleEndian();
+
+    vtkNew<ReadCTProgressUpdate> callback;
+    callback->setDialog(dialog);
+    reader->AddObserver(vtkCommand::ProgressEvent, callback);
     reader->Update();
 
     // convert scalar type
