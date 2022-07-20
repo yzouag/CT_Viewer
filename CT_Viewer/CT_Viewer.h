@@ -11,6 +11,7 @@
 #include <vtkActor.h>
 #include <QMap>
 #include <QString>
+#include "ct_image.h"
 
 class CT_Viewer : public QMainWindow
 {
@@ -21,18 +22,8 @@ public:
 
 private:
     bool CT_uploaded = false;     // CT_uploaded allows other buttons to function
-    QString filename;
-    QMap<QString, QString> dicomMetaDictionary;
     Ui::CT_ViewerClass ui;
-    vtkSmartPointer<vtkGenericOpenGLRenderWindow> renWin3D;
-    vtkSmartPointer<vtkGenericOpenGLRenderWindow> renWin[3];
-    vtkSmartPointer<vtkImageData> ctImage;
-    vtkSmartPointer<vtkImageData> updatedImage;
-    vtkSmartPointer<vtkRenderer> ren[4];
-    vtkSmartPointer<vtkRenderWindowInteractor> interactor3D;
-    vtkSmartPointer<vtkImageReslice> ctReslice[3];
-    QVector<QPair<const char*, vtkSmartPointer<vtkBoxWidget>>> screwList;
-    QVector<vtkSmartPointer<vtkActor>> screwActorList;
+    CT_Image ctImage;
 
 private slots:
     void loadCT();

@@ -27,18 +27,18 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout" stretch="2,1">
        <item>
-        <widget class="QVTKOpenGLNativeWidget" name="mainViewWidget"/>
+        <widget class="CT_3d_Widget" name="mainViewWidget"/>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
-          <widget class="QVTKOpenGLNativeWidget" name="axialViewWidget"/>
+          <widget class="CT_2d_Widget" name="axialViewWidget"/>
          </item>
          <item>
-          <widget class="QVTKOpenGLNativeWidget" name="sagittalViewWidget"/>
+          <widget class="CT_2d_Widget" name="sagittalViewWidget"/>
          </item>
          <item>
-          <widget class="QVTKOpenGLNativeWidget" name="coronalViewWidget"/>
+          <widget class="CT_2d_Widget" name="coronalViewWidget"/>
          </item>
         </layout>
        </item>
@@ -255,9 +255,14 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-   <class>QVTKOpenGLNativeWidget</class>
+   <class>CT_3d_Widget</class>
    <extends>QOpenGLWidget</extends>
-   <header location="global">QVTKOpenGLNativeWidget.h</header>
+   <header location="global">ct_3d_widget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>CT_2d_Widget</class>
+   <extends>QOpenGLWidget</extends>
+   <header>ct_2d_widget.h</header>
   </customwidget>
  </customwidgets>
  <resources>

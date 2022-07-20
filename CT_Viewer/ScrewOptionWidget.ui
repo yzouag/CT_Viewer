@@ -99,12 +99,42 @@
    </item>
    <item>
     <property name="text">
-     <string>screw (75*300)</string>
+     <string>scaled_475x30</string>
     </property>
    </item>
    <item>
     <property name="text">
-     <string>screw (100*300)</string>
+     <string>scaled_475x45</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>scaled_550x30</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>scaled_550x45</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>scaled_625x35</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>scaled_625x50</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>scaled_700x35</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>scaled_700x50</string>
     </property>
    </item>
   </widget>

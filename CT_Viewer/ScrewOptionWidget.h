@@ -7,12 +7,12 @@ class ScrewOptionWidget : public QDialog
     Q_OBJECT
 public:
     ScrewOptionWidget(QWidget *parent = nullptr);
-    int getSelectModel();
+    char* getSelectModel();
     bool confirmAction();
 
 private:
     Ui::Dialog ui;
-    int selectedModel = 0;
+    char selectedModel[30];
     bool confirmAdd;
 
 private slots:

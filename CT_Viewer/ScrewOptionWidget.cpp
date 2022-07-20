@@ -8,7 +8,7 @@ ScrewOptionWidget::ScrewOptionWidget(QWidget *parent) : QDialog(parent)
     connect(ui.cancelButton, SIGNAL(clicked()), this, SLOT(closeWindow()));
 }
 
-int ScrewOptionWidget::getSelectModel()
+char* ScrewOptionWidget::getSelectModel()
 {
     return this->selectedModel;
 }
@@ -27,6 +27,6 @@ void ScrewOptionWidget::closeWindow()
 void ScrewOptionWidget::updateSelectModel()
 {
     this->confirmAdd = true;
-    this->selectedModel = ui.comboBox->currentIndex();
+    strcpy(this->selectedModel, ui.comboBox->currentText().toStdString().c_str());
     this->close();
 }

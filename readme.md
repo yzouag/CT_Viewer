@@ -22,3 +22,24 @@ A simple application made from C++, QT, VTK to read in and view the CT images, p
 1. 每次confirm都会把现有的screws再加一次
     解决方案：每次都从最初状态开始把每个钉子加上去
     - 或者： 重新写加物体的逻辑，不用imagedata的merge。直接把投影盖在reslice上。（这样screw也能有不一样的颜色）
+
+
+问题：
+
+如何通知其他窗口，自己窗口的改变？同时需要更新其他窗口，切片的位置和cursor的位置。
+
+解决方案：
+
+- 创建一个class继承QVTKOpenGLNativeWidget
+    - 一个int变量view，代表视图
+    - 一个signal——window_updated
+    - 一个slot——updateResliceAndCursor
+    - 两个member，cursor，reslice
+    - x, y, z去代表当前cursor的位置
+
+- main view, 和2d view要分成两个class
+    - 把vtkhelper的function拆开归类到不同的widget中去
+
+- 核心的数据，ctImage，使用同一个？各种widget只是view
+
+- mvc架构，CT_viewer.cpp是controller，各种widget是view，model暂时就是ctImage这样的数据，在controller里创建并发送给view
