@@ -17,6 +17,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType);
 #include <vtkMatrix4x4.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkCoordinate.h>
+#include "reslice_interaction_callback.h"
 
 CT_2d_Widget::CT_2d_Widget(QWidget *parent = Q_NULLPTR)
 {
@@ -42,144 +43,135 @@ void CT_2d_Widget::setViewMode(ViewMode mode)
     setWindowTitle();
 }
 
-class ctResliceCallback : public vtkCommand
-{
-public:
-    static ctResliceCallback* New()
-    {
-        return new ctResliceCallback;
-    }
-    ctResliceCallback()
-    {
-        this->Slicing = 0;
-        this->ImageReslice = nullptr;
-        this->Interactor = nullptr;
-    }
-
-    void SetImageReslice(vtkImageReslice* reslice)
-    {
-        this->ImageReslice = reslice;
-    }
-
-    void SetMapToColors(vtkImageMapToColors* colors)
-    {
-        this->MapToColors = colors;
-    }
-
-    void SetInteractor(vtkRenderWindowInteractor* interactor)
-    {
-        this->Interactor = interactor;
-    }
-
-    void SetRenderWindow(vtkRenderWindow* window)
-    {
-        this->RenderWindow = window;
-    }
-
-    void Execute(vtkObject* caller, unsigned long eventId, void* callData) override
-    {
-        int lastPos[2], curPos[2];
-        this->Interactor->GetLastEventPosition(lastPos);
-        this->Interactor->GetEventPosition(curPos);
-        if (eventId == vtkCommand::RightButtonPressEvent) {
-            this->Slicing = 1;
-        } else if (eventId == vtkCommand::RightButtonReleaseEvent) {
-            this->Slicing = 0;
-        } else if (eventId == vtkCommand::MouseMoveEvent) {
-            if (this->Slicing) {
-                int deltaY = lastPos[1] - curPos[1];
-                this->ImageReslice->Update();
-                double spacing = this->ImageReslice->GetOutput()->GetSpacing()[2];
-                vtkMatrix4x4* matrix = this->ImageReslice->GetResliceAxes();
-                double point[4], center[4];
-                point[0] = 0.0;
-                point[1] = 0.0;
-                point[2] = spacing * deltaY;
-                point[3] = 1.0;
-
-                matrix->MultiplyPoint(point, center);
-                matrix->SetElement(0, 3, center[0]);
-                matrix->SetElement(1, 3, center[1]);
-                matrix->SetElement(2, 3, center[2]);
-
-                this->MapToColors->Update();
-                this->OutputImageData = this->MapToColors->GetOutput();
-                this->Interactor->Render();
-
-            } else {
-                vtkInteractorStyle* style = vtkInteractorStyle::SafeDownCast(this->Interactor->GetInteractorStyle());
-                if (style)
-                    style->OnMouseMove();
-            }
-        }
-    }
-
-private:
-    int Slicing;
-    vtkImageReslice* ImageReslice;
-    vtkImageMapToColors* MapToColors;
-    vtkRenderWindowInteractor* Interactor;
-    vtkRenderWindow* RenderWindow;
-    vtkImageData* OutputImageData;
-};
-
-class vtkImageInteractionCallback : public vtkCommand
-{
-public:
-    static vtkImageInteractionCallback* New()
-    {
-        return new vtkImageInteractionCallback;
-    }
-
-    void setCursor(vtkSmartPointer<vtkCursor2D> cursor)
-    {
-        this->cursor = cursor;
-    }
-
-    void setInteractor(vtkSmartPointer<vtkRenderWindowInteractor> interactor)
-    {
-        this->interactor = interactor;
-    }
-
-    void setRender(vtkSmartPointer<vtkRenderer> render)
-    {
-        this->ren = render;
-    }
-
-    void Execute(vtkObject* caller, unsigned long eventId, void* callData) override
-    {
-        if (eventId == vtkCommand::LeftButtonPressEvent) {
-            isToggled = true;
-        } else if (eventId == vtkCommand::LeftButtonReleaseEvent) {
-            isToggled = false;
-            updateCursorPos();
-        } else {
-            if (!isToggled) {
-                return;
-            }
-            updateCursorPos();
-        }
-    }
-
-private:
-    vtkSmartPointer<vtkCursor2D> cursor;
-    vtkSmartPointer<vtkRenderWindowInteractor> interactor;
-    vtkSmartPointer<vtkRenderer> ren;
-    bool isToggled = false;
-    void updateCursorPos()
-    {
-        int pos[2];
-        this->interactor->GetEventPosition(pos);
-        vtkNew<vtkCoordinate> coordinateSystem;
-        coordinateSystem->SetCoordinateSystemToDisplay();
-        coordinateSystem->SetValue(1.0 * pos[0], 1.0 * pos[1]);
-        double* worldPos = coordinateSystem->GetComputedWorldValue(this->ren);
-        this->cursor->SetFocalPoint(worldPos);
-        this->cursor->Modified();
-        this->interactor->Render();
-
-    }
-};
+//class ctResliceCallback : public vtkCommand
+//{
+//public:
+//    static ctResliceCallback* New()
+//    {
+//        return new ctResliceCallback;
+//    }
+//    ctResliceCallback()
+//    {
+//        this->Slicing = 0;
+//        this->ImageReslice = nullptr;
+//        this->Interactor = nullptr;
+//    }
+//
+//    void SetImageReslice(vtkImageReslice* reslice)
+//    {
+//        this->ImageReslice = reslice;
+//    }
+//
+//    void SetMapToColors(vtkImageMapToColors* colors)
+//    {
+//        this->MapToColors = colors;
+//    }
+//
+//    void SetInteractor(vtkRenderWindowInteractor* interactor)
+//    {
+//        this->Interactor = interactor;
+//    }
+//
+//    void Execute(vtkObject* caller, unsigned long eventId, void* callData) override
+//    {
+//        int lastPos[2], curPos[2];
+//        this->Interactor->GetLastEventPosition(lastPos);
+//        this->Interactor->GetEventPosition(curPos);
+//        if (eventId == vtkCommand::RightButtonPressEvent) {
+//            this->Slicing = 1;
+//        } else if (eventId == vtkCommand::RightButtonReleaseEvent) {
+//            this->Slicing = 0;
+//        } else if (eventId == vtkCommand::MouseMoveEvent) {
+//            if (this->Slicing) {
+//                int deltaY = lastPos[1] - curPos[1];
+//                this->ImageReslice->Update();
+//                double spacing = this->ImageReslice->GetOutput()->GetSpacing()[2];
+//                vtkMatrix4x4* matrix = this->ImageReslice->GetResliceAxes();
+//                double point[4], center[4];
+//                point[0] = 0.0;
+//                point[1] = 0.0;
+//                point[2] = spacing * deltaY;
+//                point[3] = 1.0;
+//
+//                matrix->MultiplyPoint(point, center);
+//                matrix->SetElement(0, 3, center[0]);
+//                matrix->SetElement(1, 3, center[1]);
+//                matrix->SetElement(2, 3, center[2]);
+//
+//                this->MapToColors->Update();
+//                this->Interactor->Render();
+//
+//            } else {
+//                vtkInteractorStyle* style = vtkInteractorStyle::SafeDownCast(this->Interactor->GetInteractorStyle());
+//                if (style)
+//                    style->OnMouseMove();
+//            }
+//        }
+//    }
+//
+//private:
+//    int Slicing;
+//    vtkImageReslice* ImageReslice;
+//    vtkImageMapToColors* MapToColors;
+//    vtkRenderWindowInteractor* Interactor;
+//};
+//
+//class vtkImageInteractionCallback : public vtkCommand
+//{
+//public:
+//    static vtkImageInteractionCallback* New()
+//    {
+//        return new vtkImageInteractionCallback;
+//    }
+//
+//    void setCursor(vtkSmartPointer<vtkCursor2D> cursor)
+//    {
+//        this->cursor = cursor;
+//    }
+//
+//    void setInteractor(vtkSmartPointer<vtkRenderWindowInteractor> interactor)
+//    {
+//        this->interactor = interactor;
+//    }
+//
+//    void setRender(vtkSmartPointer<vtkRenderer> render)
+//    {
+//        this->ren = render;
+//    }
+//
+//    void Execute(vtkObject* caller, unsigned long eventId, void* callData) override
+//    {
+//        if (eventId == vtkCommand::LeftButtonPressEvent) {
+//            isToggled = true;
+//        } else if (eventId == vtkCommand::LeftButtonReleaseEvent) {
+//            isToggled = false;
+//            updateCursorPos();
+//        } else {
+//            if (!isToggled) {
+//                return;
+//            }
+//            updateCursorPos();
+//        }
+//    }
+//
+//private:
+//    vtkSmartPointer<vtkCursor2D> cursor;
+//    vtkSmartPointer<vtkRenderWindowInteractor> interactor;
+//    vtkSmartPointer<vtkRenderer> ren;
+//    bool isToggled = false;
+//    void updateCursorPos()
+//    {
+//        int pos[2];
+//        this->interactor->GetEventPosition(pos);
+//        vtkNew<vtkCoordinate> coordinateSystem;
+//        coordinateSystem->SetCoordinateSystemToDisplay();
+//        coordinateSystem->SetValue(1.0 * pos[0], 1.0 * pos[1]);
+//        double* worldPos = coordinateSystem->GetComputedWorldValue(this->ren);
+//        this->cursor->SetFocalPoint(worldPos);
+//        this->cursor->Modified();
+//        this->interactor->Render();
+//    }
+//};
 
 void CT_2d_Widget::renderCTReslice(vtkImageReslice * reslice)
 {
@@ -232,26 +224,20 @@ void CT_2d_Widget::renderCTReslice(vtkImageReslice * reslice)
     vtkNew<vtkInteractorStyleImage> imageStyle;
     interactor->SetInteractorStyle(imageStyle);
 
-    // define logics for reslice the model
-    vtkNew<ctResliceCallback> callback;
-    callback->SetImageReslice(this->reslice);
-    callback->SetMapToColors(mapToColors);
-    callback->SetInteractor(interactor);
-    callback->SetRenderWindow(this->renWin);
+    // define logics for reslice the model and cursor interaction
+    vtkNew<resliceInteractionCallback> callback;
+    callback->setImageReslice(this->reslice);
+    callback->setMapToColors(mapToColors);
+    callback->setInteractor(interactor);
+    callback->setCursor(cursor);
+    callback->setInteractor(interactor);
+    callback->setRender(this->render);
 
     imageStyle->AddObserver(vtkCommand::RightButtonPressEvent, callback);
     imageStyle->AddObserver(vtkCommand::RightButtonReleaseEvent, callback);
     imageStyle->AddObserver(vtkCommand::MouseMoveEvent, callback);
-
-    // add interactions for cursors
-    vtkNew<vtkImageInteractionCallback> cursorCallback;
-    cursorCallback->setCursor(cursor);
-    cursorCallback->setInteractor(interactor);
-    cursorCallback->setRender(this->render);
-
-    imageStyle->AddObserver(vtkCommand::LeftButtonPressEvent, cursorCallback);
-    imageStyle->AddObserver(vtkCommand::LeftButtonReleaseEvent, cursorCallback);
-    imageStyle->AddObserver(vtkCommand::MouseMoveEvent, cursorCallback);
+    imageStyle->AddObserver(vtkCommand::LeftButtonPressEvent, callback);
+    imageStyle->AddObserver(vtkCommand::LeftButtonReleaseEvent, callback);
     
     // generate the scene
     this->renWin->Render();
