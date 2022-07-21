@@ -200,6 +200,7 @@ void CT_Image::createReslices(int axis)
     this->ctImage->GetSpacing(spacing);
     this->ctImage->GetOrigin(origin);
 
+    // the center position of the 3D model
     center[0] = origin[0] + spacing[0] * 0.5 * (extent[0] + extent[1]);
     center[1] = origin[1] + spacing[1] * 0.5 * (extent[2] + extent[3]);
     center[2] = origin[2] + spacing[2] * 0.5 * (extent[4] + extent[5]);

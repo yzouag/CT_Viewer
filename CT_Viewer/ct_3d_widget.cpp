@@ -131,6 +131,7 @@ void CT_3d_Widget::addScrew(const char * screwName)
     screw->getScrewWidget()->SetInteractor(this->interactor);
     screw->getScrewWidget()->On();
     this->render->AddActor(screw->getScrewActor());
+    this->renWin->Render();
     this->screwList.push_back(screw);
 }
 
@@ -142,4 +143,5 @@ void CT_3d_Widget::removeAll() // this method is suspicious of memory leak!!!
         delete screw;
     }
     screwList.clear();
+    this->renWin->Render();
 }

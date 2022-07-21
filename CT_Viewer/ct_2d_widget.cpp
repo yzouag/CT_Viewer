@@ -9,15 +9,13 @@ VTK_MODULE_INIT(vtkRenderingFreeType);
 #include <vtkImageMapToColors.h>
 #include <vtkImageActor.h>
 #include <vtkImageMapper3D.h>
-#include <vtkCursor2D.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
 #include <vtkProperty.h>
 #include <vtkInteractorStyleImage.h>
-#include <vtkMatrix4x4.h>
 #include <vtkGenericOpenGLRenderWindow.h>
-#include <vtkCoordinate.h>
 #include "reslice_interaction_callback.h"
+#include <QDebug>
 
 CT_2d_Widget::CT_2d_Widget(QWidget *parent = Q_NULLPTR)
 {
@@ -32,7 +30,6 @@ CT_2d_Widget::CT_2d_Widget(QWidget *parent = Q_NULLPTR)
     this->render = render;
 }
 
-
 CT_2d_Widget::~CT_2d_Widget()
 {
 }
@@ -43,139 +40,17 @@ void CT_2d_Widget::setViewMode(ViewMode mode)
     setWindowTitle();
 }
 
-//class ctResliceCallback : public vtkCommand
-//{
-//public:
-//    static ctResliceCallback* New()
-//    {
-//        return new ctResliceCallback;
-//    }
-//    ctResliceCallback()
-//    {
-//        this->Slicing = 0;
-//        this->ImageReslice = nullptr;
-//        this->Interactor = nullptr;
-//    }
-//
-//    void SetImageReslice(vtkImageReslice* reslice)
-//    {
-//        this->ImageReslice = reslice;
-//    }
-//
-//    void SetMapToColors(vtkImageMapToColors* colors)
-//    {
-//        this->MapToColors = colors;
-//    }
-//
-//    void SetInteractor(vtkRenderWindowInteractor* interactor)
-//    {
-//        this->Interactor = interactor;
-//    }
-//
-//    void Execute(vtkObject* caller, unsigned long eventId, void* callData) override
-//    {
-//        int lastPos[2], curPos[2];
-//        this->Interactor->GetLastEventPosition(lastPos);
-//        this->Interactor->GetEventPosition(curPos);
-//        if (eventId == vtkCommand::RightButtonPressEvent) {
-//            this->Slicing = 1;
-//        } else if (eventId == vtkCommand::RightButtonReleaseEvent) {
-//            this->Slicing = 0;
-//        } else if (eventId == vtkCommand::MouseMoveEvent) {
-//            if (this->Slicing) {
-//                int deltaY = lastPos[1] - curPos[1];
-//                this->ImageReslice->Update();
-//                double spacing = this->ImageReslice->GetOutput()->GetSpacing()[2];
-//                vtkMatrix4x4* matrix = this->ImageReslice->GetResliceAxes();
-//                double point[4], center[4];
-//                point[0] = 0.0;
-//                point[1] = 0.0;
-//                point[2] = spacing * deltaY;
-//                point[3] = 1.0;
-//
-//                matrix->MultiplyPoint(point, center);
-//                matrix->SetElement(0, 3, center[0]);
-//                matrix->SetElement(1, 3, center[1]);
-//                matrix->SetElement(2, 3, center[2]);
-//
-//                this->MapToColors->Update();
-//                this->Interactor->Render();
-//
-//            } else {
-//                vtkInteractorStyle* style = vtkInteractorStyle::SafeDownCast(this->Interactor->GetInteractorStyle());
-//                if (style)
-//                    style->OnMouseMove();
-//            }
-//        }
-//    }
-//
-//private:
-//    int Slicing;
-//    vtkImageReslice* ImageReslice;
-//    vtkImageMapToColors* MapToColors;
-//    vtkRenderWindowInteractor* Interactor;
-//};
-//
-//class vtkImageInteractionCallback : public vtkCommand
-//{
-//public:
-//    static vtkImageInteractionCallback* New()
-//    {
-//        return new vtkImageInteractionCallback;
-//    }
-//
-//    void setCursor(vtkSmartPointer<vtkCursor2D> cursor)
-//    {
-//        this->cursor = cursor;
-//    }
-//
-//    void setInteractor(vtkSmartPointer<vtkRenderWindowInteractor> interactor)
-//    {
-//        this->interactor = interactor;
-//    }
-//
-//    void setRender(vtkSmartPointer<vtkRenderer> render)
-//    {
-//        this->ren = render;
-//    }
-//
-//    void Execute(vtkObject* caller, unsigned long eventId, void* callData) override
-//    {
-//        if (eventId == vtkCommand::LeftButtonPressEvent) {
-//            isToggled = true;
-//        } else if (eventId == vtkCommand::LeftButtonReleaseEvent) {
-//            isToggled = false;
-//            updateCursorPos();
-//        } else {
-//            if (!isToggled) {
-//                return;
-//            }
-//            updateCursorPos();
-//        }
-//    }
-//
-//private:
-//    vtkSmartPointer<vtkCursor2D> cursor;
-//    vtkSmartPointer<vtkRenderWindowInteractor> interactor;
-//    vtkSmartPointer<vtkRenderer> ren;
-//    bool isToggled = false;
-//    void updateCursorPos()
-//    {
-//        int pos[2];
-//        this->interactor->GetEventPosition(pos);
-//        vtkNew<vtkCoordinate> coordinateSystem;
-//        coordinateSystem->SetCoordinateSystemToDisplay();
-//        coordinateSystem->SetValue(1.0 * pos[0], 1.0 * pos[1]);
-//        double* worldPos = coordinateSystem->GetComputedWorldValue(this->ren);
-//        this->cursor->SetFocalPoint(worldPos);
-//        this->cursor->Modified();
-//        this->interactor->Render();
-//    }
-//};
-
 void CT_2d_Widget::renderCTReslice(vtkImageReslice * reslice)
 {
     this->reslice = reslice;
+
+    // initialize the model center and the slice center
+    // the slice center is at model center when image reslice
+    // created, and it will change after cursor position update
+    for (int i = 0; i < 3; i++) {
+        this->sliceCenter[i] = reslice->GetResliceAxesOrigin()[i];
+        this->modelCenter[i] = reslice->GetResliceAxesOrigin()[i];
+    }
 
     // define look up table and create the image actor
     vtkNew<vtkLookupTable> lookupTable;
@@ -202,6 +77,7 @@ void CT_2d_Widget::renderCTReslice(vtkImageReslice * reslice)
     cursor->OutlineOff();
     cursor->SetFocalPoint(0, 0, 0);
     cursor->Update();
+    this->cursor = cursor;
 
     vtkNew<vtkPolyDataMapper> cursorMapper;
     cursorMapper->SetInputConnection(cursor->GetOutputPort());
@@ -232,6 +108,7 @@ void CT_2d_Widget::renderCTReslice(vtkImageReslice * reslice)
     callback->setCursor(cursor);
     callback->setInteractor(interactor);
     callback->setRender(this->render);
+    callback->setQTWidget(this);
 
     imageStyle->AddObserver(vtkCommand::RightButtonPressEvent, callback);
     imageStyle->AddObserver(vtkCommand::RightButtonReleaseEvent, callback);
@@ -250,8 +127,101 @@ void CT_2d_Widget::updateCTReslice(vtkImageData* ctImage)
     this->renWin->Render();
 }
 
+void CT_2d_Widget::sendPosSignal()
+{
+    emit cursorPosChange(this->cursor->GetFocalPoint()[0], this->cursor->GetFocalPoint()[1], this->mode);
+}
+
+void CT_2d_Widget::sendResliceSignal()
+{
+    double position[3];
+    this->reslice->GetResliceAxesOrigin(position);
+    emit reslicePosChange(position[this->mode], this->mode);
+}
+
+double * CT_2d_Widget::getModelCenter()
+{
+    return this->modelCenter;
+}
+
 // must be done after set view mode
 void CT_2d_Widget::setWindowTitle()
 {
     setHeader(this->render, this->mode);
+}
+
+void CT_2d_Widget::updateCursorPos()
+{
+    double x, y;
+
+    // the transform of transform to 3D position is very tricky, be cautious!!!
+    switch (this->mode) {
+    case Sagittal:
+        x = this->modelCenter[1] - this->sliceCenter[1];
+        y = this->modelCenter[2] - this->sliceCenter[2];
+        break;
+    case Coronal:
+        x = this->modelCenter[0] - this->sliceCenter[0];
+        y = this->modelCenter[2] - this->sliceCenter[2];
+        break;
+    case Axial:
+        x = this->modelCenter[0] - this->sliceCenter[0];
+        y = this->sliceCenter[1] - this->modelCenter[1];
+        break;
+    }
+    this->cursor->SetFocalPoint(x, y, 0);
+    this->cursor->Modified();
+    this->renWin->Render();
+}
+
+void CT_2d_Widget::updateReslicePos()
+{
+    switch (this->mode) {
+    case Sagittal:
+        this->reslice->SetResliceAxesOrigin(this->modelCenter[0]*2-this->sliceCenter[0], this->modelCenter[1], this->modelCenter[2]);
+        break;
+    case Coronal:
+        this->reslice->SetResliceAxesOrigin(this->modelCenter[0], this->sliceCenter[1], this->modelCenter[2]);
+        break;
+    case Axial:
+        this->reslice->SetResliceAxesOrigin(this->modelCenter[0], this->modelCenter[1], this->sliceCenter[2]);
+        break;
+    }
+    this->reslice->Modified();
+    this->renWin->Render();
+}
+
+void CT_2d_Widget::updateWhenReslicePosChange(int z, ViewMode comingSignalViewMode)
+{
+    if (this->mode == comingSignalViewMode) {
+        return; // if same window, no need to update
+    }
+    this->sliceCenter[comingSignalViewMode] = z;
+    updateCursorPos();
+    updateReslicePos();
+}
+
+void CT_2d_Widget::updateWhenCursorPosChange(int x, int y, ViewMode comingSignalViewMode)
+{
+    if (this->mode == comingSignalViewMode) {
+        return; // if same window, no need to update
+    }
+
+    // the transformation of cursor position to global position is very tricky, be cautious!!!
+    switch (comingSignalViewMode) {
+    case Sagittal:
+        this->sliceCenter[1] = modelCenter[1] - x;
+        this->sliceCenter[2] = modelCenter[2] - y;
+        break;
+    case Coronal:
+        this->sliceCenter[0] = modelCenter[0] - x;
+        this->sliceCenter[2] = modelCenter[2] - y;
+        break;
+    case Axial:
+        this->sliceCenter[0] = modelCenter[0] - x;
+        this->sliceCenter[1] = y + modelCenter[1];
+        break;
+    }
+    updateCursorPos();
+    updateReslicePos();
 }
