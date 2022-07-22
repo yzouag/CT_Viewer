@@ -40,25 +40,6 @@ const char * PlantingScrews::getScrewName()
     return this->screwName;
 }
 
-// callback for vtk box widget, the actor will transform with the
-//  outline widget together
-class widgetCallback : public vtkCommand
-{
-public:
-    static widgetCallback* New()
-    {
-        return new widgetCallback;
-    }
-    virtual void Execute(vtkObject* caller, unsigned long, void*)
-    {
-        vtkNew<vtkTransform> t;
-        vtkBoxWidget* widget = reinterpret_cast<vtkBoxWidget*>(caller);
-        widget->GetTransform(t);
-        widget->GetProp3D()->SetUserTransform(t);
-    }
-};
-
-
 // add cone actor which can change shape and size    
 void PlantingScrews::addCone()
 {
@@ -110,8 +91,7 @@ vtkSmartPointer<vtkBoxWidget> PlantingScrews::createBoxWidget()
     vtkNew<vtkBoxWidget> boxWidget;
     boxWidget->SetProp3D(this->screwActor);
     boxWidget->SetPlaceFactor(1.25);
+    boxWidget->SetHandleSize(0.005);
     boxWidget->PlaceWidget();
-    vtkNew<widgetCallback> callback;
-    boxWidget->AddObserver(vtkCommand::InteractionEvent, callback);
     return boxWidget;
 }

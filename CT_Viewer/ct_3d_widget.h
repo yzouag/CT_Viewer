@@ -6,7 +6,13 @@
 #include <vtkRenderWindowInteractor.h>
 #include <QProgressDialog>
 #include "planting_screws.h"
+#include <vtkProperty.h>
 #include <QVector>
+
+enum ScrewAction
+{
+    UP, DOWN, LEFT, RIGHT, FRONT, BACK, ROTATE_IS, ROTATE_LR
+};
 
 namespace Ui {
     class CT_3d_Widget;
@@ -23,6 +29,12 @@ public:
     vtkGenericOpenGLRenderWindow* getRenderWindow();
     void setCTImage(vtkImageData* ctImage);
     QVector<PlantingScrews*> getScrewList();
+    void confirmActors();
+    void moveScrew(ScrewAction action, double value=0);
+    void setActiveScrew(vtkBoxWidget* activeScrew);
+    vtkBoxWidget* getActiveScrew();
+    vtkProperty* getLastPickedProperty();
+    void setLastPickedProperty(vtkProperty* lastPickedProperty);
 
 public slots:
     void loadCT();
@@ -30,10 +42,12 @@ public slots:
     void removeAll();
 
 private:
+    vtkBoxWidget* activeScrew = nullptr;
     vtkGenericOpenGLRenderWindow* renWin;
     vtkRenderer* render;
     vtkImageData* ctImage;
     vtkRenderWindowInteractor* interactor;
     QVector<PlantingScrews*> screwList;
+    vtkProperty* lastPickedProperty;
 };
 

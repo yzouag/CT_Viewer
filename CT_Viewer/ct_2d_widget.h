@@ -5,7 +5,6 @@
 #include <vtkRenderer.h>
 #include <vtkImageData.h>
 #include <vtkCursor2D.h>
-
 #include <vtkActor.h>
 #include <vtkImageActor.h>
 

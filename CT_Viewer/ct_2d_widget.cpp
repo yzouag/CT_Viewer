@@ -178,6 +178,7 @@ void CT_2d_Widget::updateReslicePos()
 {
     switch (this->mode) {
     case Sagittal:
+        // a lot of corner cases for these interactions, don't know why
         this->reslice->SetResliceAxesOrigin(this->modelCenter[0]*2-this->sliceCenter[0], this->modelCenter[1], this->modelCenter[2]);
         break;
     case Coronal:

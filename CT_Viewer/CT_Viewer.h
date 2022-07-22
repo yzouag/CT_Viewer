@@ -31,4 +31,6 @@ private slots:
     void handleConfirm();
     void handleClear();
     void handleDetail();
+    void onScrewButtonClick();
+    void onScrewSliderChange(double value);
 };

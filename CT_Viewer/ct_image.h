@@ -50,4 +50,3 @@ private:
     bool load_succeed;
     const char* path;
 };
-

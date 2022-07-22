@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1092</width>
-    <height>821</height>
+    <width>1111</width>
+    <height>740</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,13 +19,13 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>1071</width>
-      <height>761</height>
+      <width>1091</width>
+      <height>681</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="20,1">
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout" stretch="2,1">
+      <layout class="QVBoxLayout" name="verticalLayout" stretch="3,2">
        <item>
         <widget class="CT_3d_Widget" name="mainViewWidget"/>
        </item>
@@ -47,7 +47,7 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,0">
+        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0">
          <item>
           <layout class="QGridLayout" name="gridLayout" columnstretch="1,1" columnminimumwidth="1,1">
            <item row="0" column="0">
@@ -114,19 +114,6 @@
           </widget>
          </item>
          <item>
-          <spacer name="verticalSpacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>160</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
           <widget class="QPushButton" name="addButton">
            <property name="text">
             <string>add</string>
@@ -163,6 +150,128 @@
         </spacer>
        </item>
        <item>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="2" column="1">
+          <widget class="QPushButton" name="downButton">
+           <property name="text">
+            <string>down</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QPushButton" name="backButton">
+           <property name="text">
+            <string>back</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QPushButton" name="frontButton">
+           <property name="text">
+            <string>front</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QPushButton" name="rightButton">
+           <property name="text">
+            <string>right</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QPushButton" name="leftButton">
+           <property name="text">
+            <string>left</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QPushButton" name="upButton">
+           <property name="text">
+            <string>up</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="1" column="4">
+          <widget class="QDoubleSpinBox" name="rotateLRSpinBox">
+           <property name="decimals">
+            <number>1</number>
+           </property>
+           <property name="minimum">
+            <double>-90.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>90.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>Rotate LR:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2" colspan="2">
+          <widget class="QSlider" name="rotateLRSlider">
+           <property name="minimum">
+            <number>-900</number>
+           </property>
+           <property name="maximum">
+            <number>900</number>
+           </property>
+           <property name="sliderPosition">
+            <number>0</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2" colspan="2">
+          <widget class="QSlider" name="rotateISSlider">
+           <property name="minimum">
+            <number>-900</number>
+           </property>
+           <property name="maximum">
+            <number>900</number>
+           </property>
+           <property name="sliderPosition">
+            <number>0</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <widget class="QDoubleSpinBox" name="rotateISSpinBox">
+           <property name="decimals">
+            <number>1</number>
+           </property>
+           <property name="minimum">
+            <double>-90.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>90.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0" colspan="2">
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Rotate IS:</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
         <spacer name="verticalSpacer_2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -185,7 +294,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1092</width>
+     <width>1111</width>
      <height>23</height>
     </rect>
    </property>
@@ -257,7 +366,7 @@
   <customwidget>
    <class>CT_3d_Widget</class>
    <extends>QOpenGLWidget</extends>
-   <header location="global">ct_3d_widget.h</header>
+   <header>ct_3d_widget.h</header>
   </customwidget>
   <customwidget>
    <class>CT_2d_Widget</class>

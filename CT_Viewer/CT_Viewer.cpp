@@ -37,6 +37,23 @@ CT_Viewer::CT_Viewer(QWidget *parent)
     connect(ui.coronalViewWidget, &CT_2d_Widget::reslicePosChange, ui.axialViewWidget, &CT_2d_Widget::updateWhenReslicePosChange);
     connect(ui.axialViewWidget, &CT_2d_Widget::reslicePosChange, ui.sagittalViewWidget, &CT_2d_Widget::updateWhenReslicePosChange);
     connect(ui.axialViewWidget, &CT_2d_Widget::reslicePosChange, ui.coronalViewWidget, &CT_2d_Widget::updateWhenReslicePosChange);
+
+    // connect screw manipulation buttons
+    connect(ui.upButton, SIGNAL(clicked()), this, SLOT(onScrewButtonClick()));
+    connect(ui.downButton, SIGNAL(clicked()), this, SLOT(onScrewButtonClick()));
+    connect(ui.rightButton, SIGNAL(clicked()), this, SLOT(onScrewButtonClick()));
+    connect(ui.leftButton, SIGNAL(clicked()), this, SLOT(onScrewButtonClick()));
+    connect(ui.frontButton, SIGNAL(clicked()), this, SLOT(onScrewButtonClick()));
+    connect(ui.backButton, SIGNAL(clicked()), this, SLOT(onScrewButtonClick()));
+
+    // connect spin box and slider, then send signal to manipulate screws
+    connect(ui.rotateISSlider, &QSlider::valueChanged, ui.rotateISSpinBox, [=](int value) { ui.rotateISSpinBox->setValue(value/10.0); });
+    connect(ui.rotateISSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), ui.rotateISSlider, [=](double value) { ui.rotateISSlider->setValue(static_cast<int>(value*10)); });
+    connect(ui.rotateLRSlider, &QSlider::valueChanged, ui.rotateLRSpinBox, [=](int value) { ui.rotateLRSpinBox->setValue(value/10.0); });
+    connect(ui.rotateLRSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), ui.rotateLRSlider, [=](double value) { ui.rotateLRSlider->setValue(static_cast<int>(value*10)); });
+    
+    connect(ui.rotateISSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CT_Viewer::onScrewSliderChange);
+    connect(ui.rotateLRSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CT_Viewer::onScrewSliderChange);
 }
 
 void CT_Viewer::loadCT()
@@ -99,7 +116,7 @@ void CT_Viewer::handleConfirm()
     
     // TODO: UNDO and REDO
     this->ctImage.updateImage(ui.mainViewWidget->getScrewList());
-    
+    ui.mainViewWidget->confirmActors();
     ui.sagittalViewWidget->updateCTReslice(this->ctImage.getCTImageData());
     ui.coronalViewWidget->updateCTReslice(this->ctImage.getCTImageData());
     ui.axialViewWidget->updateCTReslice(this->ctImage.getCTImageData());
@@ -135,4 +152,38 @@ void CT_Viewer::handleDetail()
     QString detailText = displayDetails(this->ctImage.getMetaInfo());
     msgBox.setText(detailText);
     msgBox.exec();
+}
+
+void CT_Viewer::onScrewButtonClick()
+{
+    QObject* obj = sender();
+    if (obj == ui.upButton) {
+        ui.mainViewWidget->moveScrew(UP);
+    }
+    else if (obj == ui.downButton) {
+        ui.mainViewWidget->moveScrew(DOWN);
+    }
+    else if (obj == ui.rightButton) {
+        ui.mainViewWidget->moveScrew(RIGHT);
+    }
+    else if (obj == ui.leftButton) {
+        ui.mainViewWidget->moveScrew(LEFT);
+    }
+    else if (obj == ui.frontButton) {
+        ui.mainViewWidget->moveScrew(FRONT);
+    }
+    else {
+        ui.mainViewWidget->moveScrew(BACK);
+    }
+}
+
+void CT_Viewer::onScrewSliderChange(double value)
+{
+    QObject* obj = sender();
+    if (obj == ui.rotateISSpinBox) {
+        ui.mainViewWidget->moveScrew(ROTATE_IS, value);
+    }
+    else if (obj == ui.rotateLRSpinBox) {
+        ui.mainViewWidget->moveScrew(ROTATE_LR, value);
+    }
 }
