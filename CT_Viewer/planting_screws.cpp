@@ -50,6 +50,7 @@ void PlantingScrews::addCone()
     cone->SetHeight(40.0);
     cone->SetRadius(10.0);
     cone->SetResolution(100);
+    cone->SetDirection(0, -1, 0);
 
     // add source to mapper and then create actor
     vtkNew<vtkPolyDataMapper> coneMapper;
@@ -91,7 +92,7 @@ vtkSmartPointer<vtkBoxWidget> PlantingScrews::createBoxWidget()
     vtkNew<vtkBoxWidget> boxWidget;
     boxWidget->SetProp3D(this->screwActor);
     boxWidget->SetPlaceFactor(1.25);
-    boxWidget->SetHandleSize(0.005);
+    boxWidget->SetHandleSize(0.001);
     boxWidget->PlaceWidget();
     return boxWidget;
 }

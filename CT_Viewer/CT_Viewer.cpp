@@ -6,6 +6,7 @@
 #include <qpushbutton.h>
 #include <qmessagebox.h>
 #include "ScrewOptionWidget.h"
+#include "ct_details_widget.h"
 
 CT_Viewer::CT_Viewer(QWidget *parent)
     : QMainWindow(parent)
@@ -14,6 +15,20 @@ CT_Viewer::CT_Viewer(QWidget *parent)
     ui.sagittalViewWidget->setViewMode(Sagittal);
     ui.axialViewWidget->setViewMode(Axial);
     ui.coronalViewWidget->setViewMode(Coronal);
+    qDebug() << ui.coronalViewWidget->objectName();
+
+    for (int i = 0; i < ui.gridLayout_2->count(); i++) {
+        QWidget* widget = ui.gridLayout_2->itemAt(i)->widget();
+        if (widget != nullptr) {
+            widget->setVisible(false);
+        }
+    }
+    for (int i = 0; i < ui.gridLayout_3->count(); i++) {
+        QWidget* widget = ui.gridLayout_3->itemAt(i)->widget();
+        if (widget != nullptr) {
+            widget->setVisible(false);
+        }
+    }
 
     // connect actions
     connect(ui.actionOpen, SIGNAL(triggered()), this, SLOT(loadCT()));
@@ -101,6 +116,19 @@ void CT_Viewer::handleAdd()
     }
     qDebug() << "select: " << widget.getSelectModel();
     ui.mainViewWidget->addScrew(widget.getSelectModel());
+
+    for (int i = 0; i < ui.gridLayout_2->count(); i++) {
+        QWidget* widget = ui.gridLayout_2->itemAt(i)->widget();
+        if (widget != nullptr) {
+            widget->setVisible(true);
+        }
+    }
+    for (int i = 0; i < ui.gridLayout_3->count(); i++) {
+        QWidget* widget = ui.gridLayout_3->itemAt(i)->widget();
+        if (widget != nullptr) {
+            widget->setVisible(true);
+        }
+    }
 }
 
 void CT_Viewer::handleConfirm()
@@ -148,10 +176,10 @@ void CT_Viewer::handleDetail()
     if (!this->CT_uploaded) {
         return;
     }
-    QMessageBox msgBox;
-    QString detailText = displayDetails(this->ctImage.getMetaInfo());
-    msgBox.setText(detailText);
-    msgBox.exec();
+    CT_Details_Widget* detail_widget = new CT_Details_Widget();
+    detail_widget->setAttribute(Qt::WA_DeleteOnClose);
+    detail_widget->setTableContent(ctImage.getMetaInfo());
+    detail_widget->show();
 }
 
 void CT_Viewer::onScrewButtonClick()

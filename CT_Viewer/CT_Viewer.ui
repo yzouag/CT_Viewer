@@ -47,7 +47,7 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0">
+        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,0">
          <item>
           <layout class="QGridLayout" name="gridLayout" columnstretch="1,1" columnminimumwidth="1,1">
            <item row="0" column="0">
@@ -64,13 +64,6 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_2">
-             <property name="text">
-              <string>Acqusition Time:</string>
-             </property>
-            </widget>
-           </item>
            <item row="1" column="1">
             <widget class="QLabel" name="date_label">
              <property name="minimumSize">
@@ -84,6 +77,13 @@
              </property>
             </widget>
            </item>
+           <item row="2" column="1">
+            <widget class="QLabel" name="descrip_label">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
            <item row="2" column="0">
             <widget class="QLabel" name="label_3">
              <property name="text">
@@ -91,10 +91,10 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="1">
-            <widget class="QLabel" name="descrip_label">
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_2">
              <property name="text">
-              <string/>
+              <string>Acqusition Time:</string>
              </property>
             </widget>
            </item>
@@ -108,27 +108,79 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="layoutDirection">
+            <enum>Qt::LeftToRight</enum>
+           </property>
            <property name="text">
             <string>details</string>
            </property>
           </widget>
          </item>
          <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>60</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item alignment="Qt::AlignHCenter">
           <widget class="QPushButton" name="addButton">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>150</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="text">
             <string>add</string>
            </property>
           </widget>
          </item>
-         <item>
+         <item alignment="Qt::AlignHCenter">
           <widget class="QPushButton" name="confirmButton">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>150</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="text">
             <string>confirm</string>
            </property>
           </widget>
          </item>
-         <item>
+         <item alignment="Qt::AlignHCenter">
           <widget class="QPushButton" name="clearButton">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>150</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="text">
             <string>clear</string>
            </property>
@@ -283,6 +335,29 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_6">
+         <property name="styleSheet">
+          <string notr="true">font: 75 14pt &quot;Arial&quot;;</string>
+         </property>
+         <property name="text">
+          <string>CT_Viewer</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>Author: Wilson, ZOU Yiwen</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

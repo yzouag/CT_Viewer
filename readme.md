@@ -39,8 +39,7 @@ The idea of this project borrows from two popular applications in the medical vi
     解决方案：每次都从最初状态开始把每个钉子加上去
     - 或者： 重新写加物体的逻辑，不用imagedata的merge。直接把投影盖在reslice上。（这样screw也能有不一样的颜色）
 
-
-confirm:
-    disable widget, no interactions allowed， re-merge all objects
-需要加一个table，表示添加的图钉吗？
-选中图钉，图钉变色，通过直接移动或者按键移动
+下一步：
+1. clear button有问题，报错 （复现不了）
+2. 需要可以隐藏方向按钮，只有加入之后才有用
+3. 需要加入一个显示每个图钉信息的table吗？

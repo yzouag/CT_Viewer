@@ -213,7 +213,7 @@ void CT_3d_Widget::moveScrew(ScrewAction action, double value)
         t->Translate(0, 0, -1);
         break;
     case ROTATE_IS:
-        t->RotateY(value - t->GetOrientation()[1]);
+        t->RotateX(value - t->GetOrientation()[0]);
         break;
     case ROTATE_LR:
         t->RotateZ(value - t->GetOrientation()[2]);
@@ -260,7 +260,6 @@ void CT_3d_Widget::addScrew(const char * screwName)
 
     // keep the pointer to the list, the newly added screw is active
     this->screwList.push_back(screw);
-    //this->activeScrew = screw->getScrewWidget();
 }
 
 void CT_3d_Widget::removeAll() // this method is suspicious of memory leak!!!
