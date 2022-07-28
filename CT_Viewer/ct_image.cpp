@@ -95,6 +95,21 @@ vtkSmartPointer<vtkImageReslice> CT_Image::getCTImageReslice(int axis)
     return this->ctReslices[axis];
 }
 
+vtkSmartPointer<vtkImageAccumulate> CT_Image::getCTImageAccumulate()
+{
+    int n_bins = 50;
+    int min_val = -3100; // TODO: how to get this two number?
+    int max_val = 3100;
+
+    vtkNew<vtkImageAccumulate> imageAccumulate;
+    imageAccumulate->SetInputData(this->originImage);
+    imageAccumulate->SetComponentExtent(0, n_bins-1, 0, 0, 0, 0);
+    imageAccumulate->SetComponentOrigin(min_val, 0, 0);
+    imageAccumulate->SetComponentSpacing((max_val - min_val) / n_bins, 0, 0);
+    imageAccumulate->Update();
+    return imageAccumulate;
+}
+
 QMap<QString, QString> CT_Image::getMetaInfo()
 {
     return this->metaInfo;

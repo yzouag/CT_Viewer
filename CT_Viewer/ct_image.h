@@ -6,6 +6,7 @@
 #include <QProgressDialog>
 #include <itkGDCMImageIO.h>
 #include <itkSmartPointer.h>
+#include <vtkImageAccumulate.h>
 #include "planting_screws.h"
 #include <QVector>
 #include <QMap>
@@ -18,6 +19,7 @@ public:
     void loadDicomFromDirectory(const char* path, QProgressDialog* dialog);
     vtkSmartPointer<vtkImageData> getCTImageData();
     vtkSmartPointer<vtkImageReslice> getCTImageReslice(int axis);
+    vtkSmartPointer<vtkImageAccumulate> getCTImageAccumulate();
     QMap<QString, QString> getMetaInfo();
     bool checkLoadSuccess();
     void updateImage(QVector<PlantingScrews*> screwList);
@@ -40,9 +42,12 @@ private:
         0, 0, 1, 0,
         0, 0, 0, 1}
     };
+
     void loadMetaInfo(QProgressDialog* dialog);
     void createReslices(int axis);
     void createMetaInfo(itk::SmartPointer<itk::GDCMImageIO> dicomIO);
+
+    vtkSmartPointer<vtkImageAccumulate> ctImageAccumulate;
     vtkSmartPointer<vtkImageData> ctImage;
     vtkSmartPointer<vtkImageData> originImage;
     vtkSmartPointer<vtkImageReslice> ctReslices[3];

@@ -16,6 +16,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType);
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkTransform.h>
 #include <vtkNamedColors.h>
+#include <vtkLegendScaleActor.h>
 #include <QDebug>
 
 namespace {
@@ -148,6 +149,12 @@ void CT_3d_Widget::loadCT()
     // add actor to render
     this->render->AddActor(ctVolume);
     this->render->ResetCamera();
+
+    // add scale actor
+    vtkNew<vtkLegendScaleActor> legendScaleActor;
+    legendScaleActor->AllAnnotationsOff();
+    legendScaleActor->SetRightAxisVisibility(true);
+    this->render->AddActor(legendScaleActor);
 
     // add interactor and interaction style
     vtkNew<vtkRenderWindowInteractor> interactor;

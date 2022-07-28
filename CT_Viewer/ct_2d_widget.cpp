@@ -54,13 +54,14 @@ void CT_2d_Widget::renderCTReslice(vtkImageReslice * reslice)
 
     // define look up table and create the image actor
     vtkNew<vtkLookupTable> lookupTable;
-    lookupTable->SetRange(0, 255);
+    lookupTable->SetRange(-1000, 1000);
     lookupTable->SetValueRange(0.0, 1.0);
     lookupTable->SetSaturationRange(0.0, 0.0);
     lookupTable->SetRampToLinear();
     lookupTable->Build();
 
     vtkNew<vtkImageMapToColors> mapToColors;
+    this->mapToColor = mapToColors;
     mapToColors->SetLookupTable(lookupTable);
     mapToColors->SetInputConnection(this->reslice->GetOutputPort());
     mapToColors->Update();
@@ -200,6 +201,20 @@ void CT_2d_Widget::updateWhenReslicePosChange(int z, ViewMode comingSignalViewMo
     this->sliceCenter[comingSignalViewMode] = z;
     updateCursorPos();
     updateReslicePos();
+}
+
+void CT_2d_Widget::updateColorMap(int lower, int upper)
+{
+    vtkNew<vtkLookupTable> lookupTable;
+    lookupTable->SetRange(lower, upper);
+    lookupTable->SetValueRange(0.0, 1.0);
+    lookupTable->SetSaturationRange(0.0, 0.0);
+    lookupTable->SetRampToLinear();
+    lookupTable->Build();
+
+    this->mapToColor->SetLookupTable(lookupTable);
+    this->mapToColor->Modified();
+    this->renWin->Render();
 }
 
 void CT_2d_Widget::updateWhenCursorPosChange(int x, int y, ViewMode comingSignalViewMode)

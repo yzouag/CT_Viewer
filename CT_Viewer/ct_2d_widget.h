@@ -7,6 +7,7 @@
 #include <vtkCursor2D.h>
 #include <vtkActor.h>
 #include <vtkImageActor.h>
+#include <vtkImageMapToColors.h>
 
 namespace Ui {
     class CT_2d_Widget;
@@ -29,6 +30,7 @@ public:
 public slots:
     void updateWhenCursorPosChange(int x, int y, ViewMode comingSignalViewMode);
     void updateWhenReslicePosChange(int z, ViewMode comingSignalViewMode);
+    void updateColorMap(int lower, int upper);
 
 signals:
     void cursorPosChange(int x, int y, ViewMode mode);
@@ -40,6 +42,7 @@ private:
     ViewMode mode = ThreeDimension;
     vtkImageReslice* reslice;
     vtkCursor2D* cursor;
+    vtkImageMapToColors* mapToColor;
     double modelCenter[3];
     double sliceCenter[3];
     void setWindowTitle();

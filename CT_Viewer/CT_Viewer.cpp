@@ -7,6 +7,7 @@
 #include <qmessagebox.h>
 #include "ScrewOptionWidget.h"
 #include "ct_details_widget.h"
+#include "ct_contrast_widget.h"
 
 CT_Viewer::CT_Viewer(QWidget *parent)
     : QMainWindow(parent)
@@ -15,7 +16,6 @@ CT_Viewer::CT_Viewer(QWidget *parent)
     ui.sagittalViewWidget->setViewMode(Sagittal);
     ui.axialViewWidget->setViewMode(Axial);
     ui.coronalViewWidget->setViewMode(Coronal);
-    qDebug() << ui.coronalViewWidget->objectName();
 
     for (int i = 0; i < ui.gridLayout_2->count(); i++) {
         QWidget* widget = ui.gridLayout_2->itemAt(i)->widget();
@@ -36,9 +36,9 @@ CT_Viewer::CT_Viewer(QWidget *parent)
     connect(ui.clearButton, SIGNAL(clicked()), this, SLOT(handleClear()));
     connect(ui.confirmButton, SIGNAL(clicked()), this, SLOT(handleConfirm()));
     connect(ui.detailButton, SIGNAL(clicked()), this, SLOT(handleDetail()));
+    connect(ui.actionSet_Contrast, SIGNAL(triggered()), this, SLOT(handleSetContrast()));
 
     // connect for 2D view interactions
-    // is there anyway to connect the signals more convenient?
     connect(ui.sagittalViewWidget, &CT_2d_Widget::cursorPosChange, ui.coronalViewWidget, &CT_2d_Widget::updateWhenCursorPosChange);
     connect(ui.sagittalViewWidget, &CT_2d_Widget::cursorPosChange, ui.axialViewWidget, &CT_2d_Widget::updateWhenCursorPosChange);
     connect(ui.coronalViewWidget, &CT_2d_Widget::cursorPosChange, ui.sagittalViewWidget, &CT_2d_Widget::updateWhenCursorPosChange);
@@ -61,12 +61,13 @@ CT_Viewer::CT_Viewer(QWidget *parent)
     connect(ui.frontButton, SIGNAL(clicked()), this, SLOT(onScrewButtonClick()));
     connect(ui.backButton, SIGNAL(clicked()), this, SLOT(onScrewButtonClick()));
 
-    // connect spin box and slider, then send signal to manipulate screws
+    // connect spin box and slider
     connect(ui.rotateISSlider, &QSlider::valueChanged, ui.rotateISSpinBox, [=](int value) { ui.rotateISSpinBox->setValue(value/10.0); });
     connect(ui.rotateISSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), ui.rotateISSlider, [=](double value) { ui.rotateISSlider->setValue(static_cast<int>(value*10)); });
     connect(ui.rotateLRSlider, &QSlider::valueChanged, ui.rotateLRSpinBox, [=](int value) { ui.rotateLRSpinBox->setValue(value/10.0); });
     connect(ui.rotateLRSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), ui.rotateLRSlider, [=](double value) { ui.rotateLRSlider->setValue(static_cast<int>(value*10)); });
     
+    // then send signal to manipulate screws
     connect(ui.rotateISSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CT_Viewer::onScrewSliderChange);
     connect(ui.rotateLRSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CT_Viewer::onScrewSliderChange);
 }
@@ -102,6 +103,10 @@ void CT_Viewer::loadCT()
 
     progressDialog->deleteLater();
     ui.statusBar->clearMessage();
+
+    // this is to make sure when load a new Dicom image
+    // the contrast should reset
+    CT_Contrast_Widget::first_init = true;
 }
 
 void CT_Viewer::handleAdd()
@@ -114,7 +119,6 @@ void CT_Viewer::handleAdd()
     if (!widget.confirmAction()) {
         return;
     }
-    qDebug() << "select: " << widget.getSelectModel();
     ui.mainViewWidget->addScrew(widget.getSelectModel());
 
     for (int i = 0; i < ui.gridLayout_2->count(); i++) {
@@ -180,6 +184,20 @@ void CT_Viewer::handleDetail()
     detail_widget->setAttribute(Qt::WA_DeleteOnClose);
     detail_widget->setTableContent(ctImage.getMetaInfo());
     detail_widget->show();
+}
+
+void CT_Viewer::handleSetContrast()
+{
+    if (!this->CT_uploaded) {
+        return;
+    }
+    CT_Contrast_Widget* contrast_widget = new CT_Contrast_Widget(this->ctImage.getCTImageAccumulate());
+    contrast_widget->setAttribute(Qt::WA_DeleteOnClose);
+    contrast_widget->show();
+    // connect contrast change signal with ct_2d_widgets
+    connect(contrast_widget, &CT_Contrast_Widget::contrastAdjusted, this->ui.sagittalViewWidget, &CT_2d_Widget::updateColorMap);
+    connect(contrast_widget, &CT_Contrast_Widget::contrastAdjusted, this->ui.coronalViewWidget, &CT_2d_Widget::updateColorMap);
+    connect(contrast_widget, &CT_Contrast_Widget::contrastAdjusted, this->ui.axialViewWidget, &CT_2d_Widget::updateColorMap);
 }
 
 void CT_Viewer::onScrewButtonClick()

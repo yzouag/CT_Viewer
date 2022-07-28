@@ -29,9 +29,9 @@ The idea of this project borrows from two popular applications in the medical vi
 8. 设置初始页面（类似itk snap）
 9. undo redo 操作？要实现是否重写imageblend？
 10. 加入测量工具
-11. 设置不同灰度的显示
+11. 设置不同灰度的显示(完成)
 12. 改善UI
-13. details改为table
+13. details改为table(完成)
 
 ## Bugs:
 
@@ -41,5 +41,4 @@ The idea of this project borrows from two popular applications in the medical vi
 
 下一步：
 1. clear button有问题，报错 （复现不了）
-2. 需要可以隐藏方向按钮，只有加入之后才有用
-3. 需要加入一个显示每个图钉信息的table吗？
+2. 需要加入一个显示每个图钉信息的table吗？
