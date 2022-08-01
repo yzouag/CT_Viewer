@@ -37,7 +37,7 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
     connect(ui.detailButton, SIGNAL(clicked()), this, SLOT(handleDetail()));
     connect(ui.actionSet_Contrast, SIGNAL(triggered()), this, SLOT(handleSetContrast()));
 
-    // connect for 2D view interactions
+    // connect for 2D view interactions (cursor location update, reslice pos update)
     connect(ui.sagittalViewWidget, &CT_2d_Widget::cursorPosChange, ui.coronalViewWidget, &CT_2d_Widget::updateWhenCursorPosChange);
     connect(ui.sagittalViewWidget, &CT_2d_Widget::cursorPosChange, ui.axialViewWidget, &CT_2d_Widget::updateWhenCursorPosChange);
     connect(ui.coronalViewWidget, &CT_2d_Widget::cursorPosChange, ui.sagittalViewWidget, &CT_2d_Widget::updateWhenCursorPosChange);
@@ -52,6 +52,26 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
     connect(ui.axialViewWidget, &CT_2d_Widget::reslicePosChange, ui.sagittalViewWidget, &CT_2d_Widget::updateWhenReslicePosChange);
     connect(ui.axialViewWidget, &CT_2d_Widget::reslicePosChange, ui.coronalViewWidget, &CT_2d_Widget::updateWhenReslicePosChange);
 
+    // connect scrollbar movement with its 2D view (the 2D view will also send signal to other two 2D views to update cursor and scrollbar)
+    connect(ui.axialScrollBar, &QScrollBar::valueChanged, ui.axialViewWidget, &CT_2d_Widget::updateWhenScrollbarChanged);
+    connect(ui.coronalScrollBar, &QScrollBar::valueChanged, ui.coronalViewWidget, &CT_2d_Widget::updateWhenScrollbarChanged);
+    connect(ui.sagittalScrollBar, &QScrollBar::valueChanged, ui.sagittalViewWidget, &CT_2d_Widget::updateWhenScrollbarChanged);
+
+    // connect 2D, 3D views expand and resume
+    connect(ui.d3Button, SIGNAL(clicked()), this, SLOT(handle3DView()));
+    connect(ui.axialButton, SIGNAL(clicked()), this, SLOT(handleAxialView()));
+    connect(ui.sagittalButton, SIGNAL(clicked()), this, SLOT(handleSagittalView()));
+    connect(ui.coronalButton, SIGNAL(clicked()), this, SLOT(handleCoronalView()));
+
+    // connect screen shot buttons
+    connect(ui.d3ScreenCapture, SIGNAL(clicked()), this, SLOT(handle3DScreenshot()));
+    connect(ui.axialScreenCapture, SIGNAL(clicked()), this, SLOT(handleAxialScreenshot()));
+    connect(ui.coronalScreenCapture, SIGNAL(clicked()), this, SLOT(handleCoronalScreenshot()));
+    connect(ui.sagittalScreenCapture, SIGNAL(clicked()), this, SLOT(handleSagittalScreenshot()));
+
+    // reset 3D view camera
+    connect(ui.d3ResetButton, SIGNAL(clicked()), this, SLOT(handle3DReset()));
+
     // connect screw manipulation buttons
     connect(ui.upButton, SIGNAL(clicked()), this, SLOT(onScrewButtonClick()));
     connect(ui.downButton, SIGNAL(clicked()), this, SLOT(onScrewButtonClick()));
@@ -65,7 +85,6 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
     connect(ui.rotateISSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), ui.rotateISSlider, [=](double value) { ui.rotateISSlider->setValue(static_cast<int>(value*10)); });
     connect(ui.rotateLRSlider, &QSlider::valueChanged, ui.rotateLRSpinBox, [=](int value) { ui.rotateLRSpinBox->setValue(value/10.0); });
     connect(ui.rotateLRSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), ui.rotateLRSlider, [=](double value) { ui.rotateLRSlider->setValue(static_cast<int>(value*10)); });
-    
     // then send signal to manipulate screws
     connect(ui.rotateISSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CT_Viewer::onScrewSliderChange);
     connect(ui.rotateLRSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CT_Viewer::onScrewSliderChange);
@@ -83,6 +102,9 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
     ui.sagittalViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Sagittal));
     ui.coronalViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Coronal));
     ui.axialViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Axial));
+    ui.sagittalViewWidget->setScrollBar(this->ui.sagittalScrollBar);
+    ui.coronalViewWidget->setScrollBar(this->ui.coronalScrollBar);
+    ui.axialViewWidget->setScrollBar(this->ui.axialScrollBar);
 
     // this is to make sure when load a new Dicom image
     // the contrast should reset
@@ -92,6 +114,16 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
 CT_Viewer::~CT_Viewer()
 {
     delete this->ctImage;
+}
+
+void CT_Viewer::takeScreenshot(QWidget* widget)
+{
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save Screen Shot..."),"../screenshot.png",tr("Images (*.png)"));
+    QPixmap pixmap(widget->size());
+    widget->render(&pixmap);
+    QFile file(fileName);
+    file.open(QIODevice::WriteOnly);
+    pixmap.save(&file, "PNG");
 }
 
 void CT_Viewer::loadCT()
@@ -164,6 +196,7 @@ void CT_Viewer::handleConfirm()
         QMessageBox msgBox;
         msgBox.setText("No Screw Is Added!");
         msgBox.exec();
+        return;
     }
     
     // TODO: UNDO and REDO
@@ -204,6 +237,113 @@ void CT_Viewer::handleDetail()
     detail_widget->setAttribute(Qt::WA_DeleteOnClose);
     detail_widget->setTableContent(this->ctImage->getMetaInfo());
     detail_widget->show();
+}
+
+void CT_Viewer::handle3DView()
+{
+    bool checked = ui.d3Button->isChecked();
+    if (checked) {
+        ui.verticalLayout_3->setStretch(0, 0);
+        ui.verticalLayout_3->setStretch(1, 0);
+        ui.d3Button->setIcon(QIcon(":/CT_Viewer/resources/dl_fourviews.png"));
+        ui.axialWidget->hide();
+        ui.coronalWidget->hide();
+        ui.sagittalWidget->hide();
+    }
+    else {
+        ui.verticalLayout_3->setStretch(0, 3);
+        ui.verticalLayout_3->setStretch(1, 2);
+        ui.d3Button->setIcon(QIcon(":/CT_Viewer/resources/dl_3d.png"));
+        ui.axialWidget->show();
+        ui.coronalWidget->show();
+        ui.sagittalWidget->show();
+    }
+}
+
+void CT_Viewer::handleAxialView()
+{
+    bool checked = ui.axialButton->isChecked();
+    if (checked) {
+        ui.verticalLayout_3->setStretch(0, 0);
+        ui.verticalLayout_3->setStretch(1, 0);
+        ui.axialButton->setIcon(QIcon(":/CT_Viewer/resources/dl_fourviews.png"));
+        ui.mainWidget->hide();
+        ui.coronalWidget->hide();
+        ui.sagittalWidget->hide();
+    } else {
+        ui.verticalLayout_3->setStretch(0, 3);
+        ui.verticalLayout_3->setStretch(1, 2);
+        ui.axialButton->setIcon(QIcon(":/CT_Viewer/resources/dl_axial.png"));
+        ui.mainWidget->show();
+        ui.coronalWidget->show();
+        ui.sagittalWidget->show();
+    }
+}
+
+void CT_Viewer::handleCoronalView()
+{
+    bool checked = ui.coronalButton->isChecked();
+    if (checked) {
+        ui.verticalLayout_3->setStretch(0, 0);
+        ui.verticalLayout_3->setStretch(1, 0);
+        ui.coronalButton->setIcon(QIcon(":/CT_Viewer/resources/dl_fourviews.png"));
+        ui.axialWidget->hide();
+        ui.mainWidget->hide();
+        ui.sagittalWidget->hide();
+    } else {
+        ui.verticalLayout_3->setStretch(0, 3);
+        ui.verticalLayout_3->setStretch(1, 2);
+        ui.coronalButton->setIcon(QIcon(":/CT_Viewer/resources/dl_coronal.png"));
+        ui.axialWidget->show();
+        ui.mainWidget->show();
+        ui.sagittalWidget->show();
+    }
+}
+
+void CT_Viewer::handleSagittalView()
+{
+    bool checked = ui.sagittalButton->isChecked();
+    if (checked) {
+        ui.verticalLayout_3->setStretch(0, 0);
+        ui.verticalLayout_3->setStretch(1, 0);
+        ui.sagittalButton->setIcon(QIcon(":/CT_Viewer/resources/dl_fourviews.png"));
+        ui.mainWidget->hide();
+        ui.coronalWidget->hide();
+        ui.axialWidget->hide();
+    } else {
+        ui.verticalLayout_3->setStretch(0, 3);
+        ui.verticalLayout_3->setStretch(1, 2);
+        ui.sagittalButton->setIcon(QIcon(":/CT_Viewer/resources/dl_sagittal.png"));
+        ui.mainWidget->show();
+        ui.coronalWidget->show();
+        ui.axialWidget->show();
+    }
+}
+
+void CT_Viewer::handle3DScreenshot()
+{
+    takeScreenshot(this->ui.mainViewWidget);
+}
+
+void CT_Viewer::handleAxialScreenshot()
+{
+    takeScreenshot(this->ui.axialViewWidget);
+}
+
+void CT_Viewer::handleCoronalScreenshot()
+{
+    takeScreenshot(this->ui.coronalViewWidget);
+}
+
+void CT_Viewer::handleSagittalScreenshot()
+{
+    takeScreenshot(this->ui.sagittalViewWidget);
+}
+
+void CT_Viewer::handle3DReset()
+{
+    qDebug() << "reset";
+    this->ui.mainViewWidget->reset();
 }
 
 void CT_Viewer::handleSetContrast()

@@ -99,7 +99,7 @@ CT_3d_Widget::CT_3d_Widget(QWidget *parent = Q_NULLPTR)
     // create the render
     vtkNew<vtkRenderer> render;
     this->renWin->AddRenderer(render);
-    this->render = render;
+    this->ren = render;
 
     // set the title for main view widget
     setHeader(render, ThreeDimension);
@@ -147,14 +147,14 @@ void CT_3d_Widget::loadCT()
     ctVolume->PickableOff();
 
     // add actor to render
-    this->render->AddActor(ctVolume);
-    this->render->ResetCamera();
+    this->ren->AddActor(ctVolume);
+    this->ren->ResetCamera();
 
     // add scale actor
     vtkNew<vtkLegendScaleActor> legendScaleActor;
     legendScaleActor->AllAnnotationsOff();
     legendScaleActor->SetRightAxisVisibility(true);
-    this->render->AddActor(legendScaleActor);
+    this->ren->AddActor(legendScaleActor);
 
     // add interactor and interaction style
     vtkNew<vtkRenderWindowInteractor> interactor;
@@ -251,6 +251,11 @@ void CT_3d_Widget::setLastPickedProperty(vtkProperty * lastPickedProperty)
     this->lastPickedProperty = lastPickedProperty;
 }
 
+void CT_3d_Widget::reset()
+{
+    this->ren->ResetCamera();
+}
+
 void CT_3d_Widget::addScrew(const char * screwName)
 {
     // create a screw according to its type name
@@ -262,7 +267,7 @@ void CT_3d_Widget::addScrew(const char * screwName)
     screw->getScrewWidget()->AddObserver(vtkCommand::InteractionEvent, callback);
     screw->getScrewWidget()->SetInteractor(this->interactor);
     screw->getScrewWidget()->On();
-    this->render->AddActor(screw->getScrewActor());
+    this->ren->AddActor(screw->getScrewActor());
     this->renWin->Render();
 
     // keep the pointer to the list, the newly added screw is active
@@ -273,7 +278,7 @@ void CT_3d_Widget::removeAll() // this method is suspicious of memory leak!!!
 {
     for (auto screw : this->screwList) {
         screw->getScrewWidget()->SetEnabled(0);
-        this->render->RemoveActor(screw->getScrewActor());
+        this->ren->RemoveActor(screw->getScrewActor());
         delete screw;
     }
     screwList.clear();

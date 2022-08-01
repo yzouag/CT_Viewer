@@ -26,6 +26,7 @@ private:
     bool CT_uploaded = false;     // CT_uploaded allows other buttons to function
     Ui::CT_ViewerClass ui;
     CT_Image* ctImage;
+    void takeScreenshot(QWidget* widget);
 
 private slots:
     void loadCT();
@@ -33,6 +34,15 @@ private slots:
     void handleConfirm();
     void handleClear();
     void handleDetail();
+    void handle3DView();
+    void handleAxialView();
+    void handleCoronalView();
+    void handleSagittalView();
+    void handle3DScreenshot();
+    void handleAxialScreenshot();
+    void handleCoronalScreenshot();
+    void handleSagittalScreenshot();
+    void handle3DReset();
     void handleSetContrast();
     void onScrewButtonClick();
     void onScrewSliderChange(double value);

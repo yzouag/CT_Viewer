@@ -8,6 +8,7 @@
 #include <vtkActor.h>
 #include <vtkImageActor.h>
 #include <vtkImageMapToColors.h>
+#include <QScrollBar>
 
 namespace Ui {
     class CT_2d_Widget;
@@ -26,11 +27,13 @@ public:
     void sendPosSignal();
     void sendResliceSignal();
     double* getModelCenter();
+    void setScrollBar(QScrollBar* scrollBar);
 
 public slots:
     void updateWhenCursorPosChange(int x, int y, ViewMode comingSignalViewMode);
     void updateWhenReslicePosChange(int z, ViewMode comingSignalViewMode);
     void updateColorMap(int lower, int upper);
+    void updateWhenScrollbarChanged(int value);
 
 signals:
     void cursorPosChange(int x, int y, ViewMode mode);
@@ -38,11 +41,12 @@ signals:
 
 private:
     vtkGenericOpenGLRenderWindow* renWin;
-    vtkRenderer* render;
+    vtkRenderer* ren;
     ViewMode mode = ThreeDimension;
     vtkImageReslice* reslice;
     vtkCursor2D* cursor;
     vtkImageMapToColors* mapToColor;
+    QScrollBar* scrollBar;
     double modelCenter[3];
     double sliceCenter[3];
     void setWindowTitle();

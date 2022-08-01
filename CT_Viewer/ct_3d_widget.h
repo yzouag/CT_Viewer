@@ -35,6 +35,7 @@ public:
     vtkBoxWidget* getActiveScrew();
     vtkProperty* getLastPickedProperty();
     void setLastPickedProperty(vtkProperty* lastPickedProperty);
+    void reset();
 
 public slots:
     void loadCT();
@@ -44,7 +45,7 @@ public slots:
 private:
     vtkBoxWidget* activeScrew = nullptr;
     vtkGenericOpenGLRenderWindow* renWin;
-    vtkRenderer* render;
+    vtkRenderer* ren;
     vtkImageData* ctImage;
     vtkRenderWindowInteractor* interactor;
     QVector<PlantingScrews*> screwList;
