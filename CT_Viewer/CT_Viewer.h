@@ -18,12 +18,14 @@ class CT_Viewer : public QMainWindow
     Q_OBJECT
 
 public:
-    CT_Viewer(QWidget *parent = Q_NULLPTR);
+    CT_Viewer(CT_Image* ctImage, QWidget *parent = Q_NULLPTR);
+    ~CT_Viewer();
+    void init2DViews();
 
 private:
     bool CT_uploaded = false;     // CT_uploaded allows other buttons to function
     Ui::CT_ViewerClass ui;
-    CT_Image ctImage;
+    CT_Image* ctImage;
 
 private slots:
     void loadCT();

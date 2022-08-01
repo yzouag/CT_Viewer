@@ -6,167 +6,203 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1111</width>
-    <height>740</height>
+    <width>1200</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>CT_Viewer</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QWidget" name="layoutWidget">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>1091</width>
-      <height>681</height>
-     </rect>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_3">
+    <property name="spacing">
+     <number>3</number>
     </property>
-    <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,5">
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
+    <property name="leftMargin">
+     <number>3</number>
+    </property>
+    <property name="topMargin">
+     <number>3</number>
+    </property>
+    <property name="rightMargin">
+     <number>3</number>
+    </property>
+    <property name="bottomMargin">
+     <number>3</number>
+    </property>
+    <item>
+     <widget class="QWidget" name="widget" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>200</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,0">
-         <item>
-          <layout class="QGridLayout" name="gridLayout" columnstretch="1,1" columnminimumwidth="1,1">
-           <item row="0" column="0">
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Patient Name:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLabel" name="name_label">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QLabel" name="date_label">
-             <property name="minimumSize">
-              <size>
-               <width>80</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QLabel" name="descrip_label">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_3">
-             <property name="text">
-              <string>Description:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_2">
-             <property name="text">
-              <string>Acqusition Time:</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item alignment="Qt::AlignHCenter">
-          <widget class="QPushButton" name="detailButton">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="layoutDirection">
-            <enum>Qt::LeftToRight</enum>
-           </property>
+        <layout class="QGridLayout" name="gridLayout" columnstretch="1,1" columnminimumwidth="1,1">
+         <property name="sizeConstraint">
+          <enum>QLayout::SetDefaultConstraint</enum>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label">
            <property name="text">
-            <string>details</string>
+            <string>Patient Name:</string>
            </property>
           </widget>
          </item>
-         <item>
-          <spacer name="verticalSpacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
+         <item row="0" column="1">
+          <widget class="QLabel" name="name_label">
+           <property name="text">
+            <string/>
            </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>60</height>
-            </size>
-           </property>
-          </spacer>
+          </widget>
          </item>
-         <item alignment="Qt::AlignHCenter">
-          <widget class="QPushButton" name="addButton">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
+         <item row="1" column="1">
+          <widget class="QLabel" name="date_label">
            <property name="minimumSize">
             <size>
-             <width>150</width>
+             <width>80</width>
              <height>0</height>
             </size>
            </property>
            <property name="text">
-            <string>add</string>
+            <string/>
            </property>
           </widget>
          </item>
-         <item alignment="Qt::AlignHCenter">
-          <widget class="QPushButton" name="confirmButton">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>150</width>
-             <height>0</height>
-            </size>
-           </property>
+         <item row="2" column="1">
+          <widget class="QLabel" name="descrip_label">
            <property name="text">
-            <string>confirm</string>
+            <string/>
            </property>
           </widget>
          </item>
-         <item alignment="Qt::AlignHCenter">
-          <widget class="QPushButton" name="clearButton">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>150</width>
-             <height>0</height>
-            </size>
-           </property>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_3">
            <property name="text">
-            <string>clear</string>
+            <string>Description:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Acqusition Time:</string>
            </property>
           </widget>
          </item>
         </layout>
+       </item>
+       <item alignment="Qt::AlignHCenter">
+        <widget class="QPushButton" name="detailButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="text">
+          <string>details</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>60</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item alignment="Qt::AlignHCenter">
+        <widget class="QPushButton" name="addButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>120</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>add</string>
+         </property>
+        </widget>
+       </item>
+       <item alignment="Qt::AlignHCenter">
+        <widget class="QPushButton" name="confirmButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>120</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>confirm</string>
+         </property>
+        </widget>
+       </item>
+       <item alignment="Qt::AlignHCenter">
+        <widget class="QPushButton" name="clearButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>120</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>clear</string>
+         </property>
+        </widget>
        </item>
        <item>
         <spacer name="verticalSpacer_3">
@@ -176,7 +212,7 @@
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>40</height>
+           <height>127</height>
           </size>
          </property>
         </spacer>
@@ -228,44 +264,21 @@
         </layout>
        </item>
        <item>
-        <layout class="QGridLayout" name="gridLayout_3">
-         <item row="1" column="4">
-          <widget class="QDoubleSpinBox" name="rotateLRSpinBox">
-           <property name="decimals">
-            <number>1</number>
-           </property>
-           <property name="minimum">
-            <double>-90.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>90.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0" colspan="2">
-          <widget class="QLabel" name="label_5">
+        <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,2,1">
+         <property name="horizontalSpacing">
+          <number>0</number>
+         </property>
+         <property name="verticalSpacing">
+          <number>6</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_4">
            <property name="text">
-            <string>Rotate LR:</string>
+            <string>Rotate IS:</string>
            </property>
           </widget>
          </item>
-         <item row="1" column="2" colspan="2">
-          <widget class="QSlider" name="rotateLRSlider">
-           <property name="minimum">
-            <number>-900</number>
-           </property>
-           <property name="maximum">
-            <number>900</number>
-           </property>
-           <property name="sliderPosition">
-            <number>0</number>
-           </property>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2" colspan="2">
+         <item row="0" column="1">
           <widget class="QSlider" name="rotateISSlider">
            <property name="minimum">
             <number>-900</number>
@@ -281,7 +294,7 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="4">
+         <item row="0" column="2">
           <widget class="QDoubleSpinBox" name="rotateISSpinBox">
            <property name="decimals">
             <number>1</number>
@@ -294,10 +307,39 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0" colspan="2">
-          <widget class="QLabel" name="label_4">
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_5">
            <property name="text">
-            <string>Rotate IS:</string>
+            <string>Rotate LR:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QSlider" name="rotateLRSlider">
+           <property name="minimum">
+            <number>-900</number>
+           </property>
+           <property name="maximum">
+            <number>900</number>
+           </property>
+           <property name="sliderPosition">
+            <number>0</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QDoubleSpinBox" name="rotateLRSpinBox">
+           <property name="decimals">
+            <number>1</number>
+           </property>
+           <property name="minimum">
+            <double>-90.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>90.000000000000000</double>
            </property>
           </widget>
          </item>
@@ -318,6 +360,12 @@
        </item>
        <item>
         <widget class="QLabel" name="label_6">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="styleSheet">
           <string notr="true">font: 75 14pt &quot;Arial&quot;;</string>
          </property>
@@ -332,7 +380,7 @@
        <item>
         <widget class="QLabel" name="label_7">
          <property name="text">
-          <string>Author: Wilson, ZOU Yiwen</string>
+          <string>Author: Wilson</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -340,250 +388,405 @@
         </widget>
        </item>
       </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_7" stretch="3,2">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="100,1">
-         <property name="spacing">
-          <number>1</number>
-         </property>
-         <item>
-          <widget class="CT_3d_Widget" name="mainViewWidget">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QVBoxLayout" name="verticalLayout">
-           <item>
-            <widget class="QPushButton" name="pushButton">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>5</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>PushButton</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_2">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>5</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>PushButton</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="verticalSpacer_4">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>40</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_3">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>5</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>PushButton</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,1,0,1,0">
-         <property name="spacing">
-          <number>1</number>
-         </property>
-         <item>
-          <widget class="CT_2d_Widget" name="axialViewWidget"/>
-         </item>
-         <item>
-          <layout class="QVBoxLayout" name="verticalLayout_4">
-           <item>
-            <widget class="QPushButton" name="pushButton_4">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>5</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>PushButton</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_5">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>5</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>PushButton</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QScrollBar" name="verticalScrollBar">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="CT_2d_Widget" name="sagittalViewWidget"/>
-         </item>
-         <item>
-          <layout class="QVBoxLayout" name="verticalLayout_5">
-           <item>
-            <widget class="QPushButton" name="pushButton_6">
-             <property name="minimumSize">
-              <size>
-               <width>5</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>PushButton</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_7">
-             <property name="minimumSize">
-              <size>
-               <width>5</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>PushButton</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QScrollBar" name="verticalScrollBar_2">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="CT_2d_Widget" name="coronalViewWidget"/>
-         </item>
-         <item>
-          <layout class="QVBoxLayout" name="verticalLayout_6">
-           <item>
-            <widget class="QPushButton" name="pushButton_8">
-             <property name="minimumSize">
-              <size>
-               <width>5</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>PushButton</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_9">
-             <property name="minimumSize">
-              <size>
-               <width>5</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>PushButton</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QScrollBar" name="verticalScrollBar_3">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </item>
-    </layout>
-   </widget>
+     </widget>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_7" stretch="3,2">
+      <property name="spacing">
+       <number>3</number>
+      </property>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0">
+        <property name="spacing">
+         <number>1</number>
+        </property>
+        <item>
+         <widget class="CT_3d_Widget" name="mainViewWidget">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="QPushButton" name="d3Button">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>5</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="CT_Viewer.qrc">
+              <normaloff>:/CT_Viewer/resources/dl_3d.png</normaloff>:/CT_Viewer/resources/dl_3d.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="d3ScreenCapture">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>5</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="CT_Viewer.qrc">
+              <normaloff>:/CT_Viewer/resources/icons8_slr_camera_16.png</normaloff>:/CT_Viewer/resources/icons8_slr_camera_16.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="d3ResetButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>5</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>R</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Expanding</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>5</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,1,0,1,0">
+        <property name="spacing">
+         <number>1</number>
+        </property>
+        <item>
+         <widget class="CT_2d_Widget" name="axialViewWidget">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QPushButton" name="axialButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>5</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="CT_Viewer.qrc">
+              <normaloff>:/CT_Viewer/resources/dl_axial.png</normaloff>:/CT_Viewer/resources/dl_axial.png</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="axialScreenCapture">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>5</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="CT_Viewer.qrc">
+              <normaloff>:/CT_Viewer/resources/icons8_slr_camera_16.png</normaloff>:/CT_Viewer/resources/icons8_slr_camera_16.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QScrollBar" name="axialScrollBar">
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="CT_2d_Widget" name="sagittalViewWidget">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="QPushButton" name="sagittalButton">
+            <property name="minimumSize">
+             <size>
+              <width>5</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="CT_Viewer.qrc">
+              <normaloff>:/CT_Viewer/resources/dl_sagittal.png</normaloff>:/CT_Viewer/resources/dl_sagittal.png</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="sagittalScreenCapture">
+            <property name="minimumSize">
+             <size>
+              <width>5</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="CT_Viewer.qrc">
+              <normaloff>:/CT_Viewer/resources/icons8_slr_camera_16.png</normaloff>:/CT_Viewer/resources/icons8_slr_camera_16.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QScrollBar" name="sagittalScrollBar">
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="CT_2d_Widget" name="coronalViewWidget">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_6">
+          <item>
+           <widget class="QPushButton" name="coronalButton">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="CT_Viewer.qrc">
+              <normaloff>:/CT_Viewer/resources/dl_coronal.png</normaloff>:/CT_Viewer/resources/dl_coronal.png</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="coronalScreenCapture">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>5</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="CT_Viewer.qrc">
+              <normaloff>:/CT_Viewer/resources/icons8_slr_camera_16.png</normaloff>:/CT_Viewer/resources/icons8_slr_camera_16.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QScrollBar" name="coronalScrollBar">
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1111</width>
+     <width>1200</width>
      <height>23</height>
     </rect>
    </property>
@@ -613,7 +816,6 @@
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
   <action name="actionOpen">
    <property name="text">
     <string>Open</string>

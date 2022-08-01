@@ -1,8 +1,7 @@
 #include "ct_details_widget.h"
 #include <QDebug>
 
-CT_Details_Widget::CT_Details_Widget(QWidget *parent)
-    : QWidget(parent)
+CT_Details_Widget::CT_Details_Widget(QWidget *parent) : QWidget(parent, Qt::Window)
 {
     ui.setupUi(this);
 

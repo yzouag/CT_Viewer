@@ -42,3 +42,5 @@ The idea of this project borrows from two popular applications in the medical vi
 下一步：
 1. clear button有问题，报错 （复现不了）
 2. 需要加入一个显示每个图钉信息的table吗？
+
+cone 调整方向之后，加2d上位置是错误的

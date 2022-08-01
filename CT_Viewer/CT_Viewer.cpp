@@ -9,8 +9,7 @@
 #include "ct_details_widget.h"
 #include "ct_contrast_widget.h"
 
-CT_Viewer::CT_Viewer(QWidget *parent)
-    : QMainWindow(parent)
+CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
 {
     ui.setupUi(this);
     ui.sagittalViewWidget->setViewMode(Sagittal);
@@ -70,40 +69,61 @@ CT_Viewer::CT_Viewer(QWidget *parent)
     // then send signal to manipulate screws
     connect(ui.rotateISSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CT_Viewer::onScrewSliderChange);
     connect(ui.rotateLRSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CT_Viewer::onScrewSliderChange);
+
+    this->ctImage = ctImage;
+    this->CT_uploaded = true;
+
+    displayMetaInfo(ui, this->ctImage->getMetaInfo());
+
+    // create 3D volume and add to window
+    ui.mainViewWidget->setCTImage(this->ctImage->getCTImageData());
+    ui.mainViewWidget->loadCT();
+
+    // create 2D view for each slice
+    ui.sagittalViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Sagittal));
+    ui.coronalViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Coronal));
+    ui.axialViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Axial));
+
+    // this is to make sure when load a new Dicom image
+    // the contrast should reset
+    CT_Contrast_Widget::first_init = true;
+}
+
+CT_Viewer::~CT_Viewer()
+{
+    delete this->ctImage;
 }
 
 void CT_Viewer::loadCT()
 {
-    ui.statusBar->showMessage("Loading CT...");
-    
     // load file directory
     QString filename = QFileDialog::getExistingDirectory(this, "CT file directory", "../");
     QProgressDialog* progressDialog = createProgressDialog(tr("CT Loading"), tr("Loading CT, Please Wait..."), 100);
-    this->ctImage.loadDicomFromDirectory(filename.toStdString().c_str(), progressDialog);
+    this->ctImage->loadDicomFromDirectory(filename.toStdString().c_str(), progressDialog);
     
     // check the path is valid
-    if (!this->ctImage.checkLoadSuccess()) {
+    if (!this->ctImage->checkLoadSuccess()) {
+        progressDialog->close();
+        progressDialog->deleteLater();
         QMessageBox msgBox;
         msgBox.setText("No Dicom Files in the directory or Loading Failed!");
         msgBox.exec();
         return;
     }
     
-    displayMetaInfo(ui, this->ctImage.getMetaInfo());
+    displayMetaInfo(ui, this->ctImage->getMetaInfo());
     this->CT_uploaded = true;
 
     // create 3D volume and add to window
-    ui.mainViewWidget->setCTImage(this->ctImage.getCTImageData());
+    ui.mainViewWidget->setCTImage(this->ctImage->getCTImageData());
     ui.mainViewWidget->loadCT();
 
     // create 2D view for each slice
-    ui.sagittalViewWidget->renderCTReslice(this->ctImage.getCTImageReslice(Sagittal));
-    ui.coronalViewWidget->renderCTReslice(this->ctImage.getCTImageReslice(Coronal));
-    ui.axialViewWidget->renderCTReslice(this->ctImage.getCTImageReslice(Axial));
+    ui.sagittalViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Sagittal));
+    ui.coronalViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Coronal));
+    ui.axialViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Axial));
 
     progressDialog->deleteLater();
-    ui.statusBar->clearMessage();
-
     // this is to make sure when load a new Dicom image
     // the contrast should reset
     CT_Contrast_Widget::first_init = true;
@@ -147,11 +167,11 @@ void CT_Viewer::handleConfirm()
     }
     
     // TODO: UNDO and REDO
-    this->ctImage.updateImage(ui.mainViewWidget->getScrewList());
+    this->ctImage->updateImage(ui.mainViewWidget->getScrewList());
     ui.mainViewWidget->confirmActors();
-    ui.sagittalViewWidget->updateCTReslice(this->ctImage.getCTImageData());
-    ui.coronalViewWidget->updateCTReslice(this->ctImage.getCTImageData());
-    ui.axialViewWidget->updateCTReslice(this->ctImage.getCTImageData());
+    ui.sagittalViewWidget->updateCTReslice(this->ctImage->getCTImageData());
+    ui.coronalViewWidget->updateCTReslice(this->ctImage->getCTImageData());
+    ui.axialViewWidget->updateCTReslice(this->ctImage->getCTImageData());
 
     QMessageBox msgBox;
     msgBox.setText("Screws Are Updated!");
@@ -165,10 +185,10 @@ void CT_Viewer::handleClear()
     }
     if (ui.mainViewWidget->getScrewList().size() >= 1) {
         ui.mainViewWidget->removeAll();
-        this->ctImage.resetImage();
-        ui.sagittalViewWidget->updateCTReslice(this->ctImage.getCTImageData());
-        ui.coronalViewWidget->updateCTReslice(this->ctImage.getCTImageData());
-        ui.axialViewWidget->updateCTReslice(this->ctImage.getCTImageData());
+        this->ctImage->resetImage();
+        ui.sagittalViewWidget->updateCTReslice(this->ctImage->getCTImageData());
+        ui.coronalViewWidget->updateCTReslice(this->ctImage->getCTImageData());
+        ui.axialViewWidget->updateCTReslice(this->ctImage->getCTImageData());
     }
     QMessageBox msgBox;
     msgBox.setText("Clear!");
@@ -180,9 +200,9 @@ void CT_Viewer::handleDetail()
     if (!this->CT_uploaded) {
         return;
     }
-    CT_Details_Widget* detail_widget = new CT_Details_Widget();
+    CT_Details_Widget* detail_widget = new CT_Details_Widget(this);
     detail_widget->setAttribute(Qt::WA_DeleteOnClose);
-    detail_widget->setTableContent(ctImage.getMetaInfo());
+    detail_widget->setTableContent(this->ctImage->getMetaInfo());
     detail_widget->show();
 }
 
@@ -191,7 +211,7 @@ void CT_Viewer::handleSetContrast()
     if (!this->CT_uploaded) {
         return;
     }
-    CT_Contrast_Widget* contrast_widget = new CT_Contrast_Widget(this->ctImage.getCTImageAccumulate());
+    CT_Contrast_Widget* contrast_widget = new CT_Contrast_Widget(this->ctImage->getCTImageAccumulate(), this);
     contrast_widget->setAttribute(Qt::WA_DeleteOnClose);
     contrast_widget->show();
     // connect contrast change signal with ct_2d_widgets
@@ -232,4 +252,11 @@ void CT_Viewer::onScrewSliderChange(double value)
     else if (obj == ui.rotateLRSpinBox) {
         ui.mainViewWidget->moveScrew(ROTATE_LR, value);
     }
+}
+
+void CT_Viewer::init2DViews()
+{
+    ui.axialViewWidget->GetRenderWindow()->Render();
+    ui.coronalViewWidget->GetRenderWindow()->Render();
+    ui.sagittalViewWidget->GetRenderWindow()->Render();
 }

@@ -104,7 +104,7 @@ CT_3d_Widget::CT_3d_Widget(QWidget *parent = Q_NULLPTR)
     // set the title for main view widget
     setHeader(render, ThreeDimension);
 
-    // init last picked property (nasty design)
+    // init last picked screw vtk property (nasty design)
     this->lastPickedProperty = vtkProperty::New();
 }
 

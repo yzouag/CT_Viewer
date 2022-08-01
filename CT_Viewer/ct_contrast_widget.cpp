@@ -6,7 +6,7 @@ int CT_Contrast_Widget::lower_val = 0;
 int CT_Contrast_Widget::upper_val = 0;
 bool CT_Contrast_Widget::first_init = true;
 
-CT_Contrast_Widget::CT_Contrast_Widget(vtkSmartPointer<vtkImageAccumulate> imageAccumulate, QWidget *parent) : QWidget(parent)
+CT_Contrast_Widget::CT_Contrast_Widget(vtkSmartPointer<vtkImageAccumulate> imageAccumulate, QWidget *parent) : QWidget(parent, Qt::Window)
 {
     ui.setupUi(this);
 
@@ -17,7 +17,7 @@ CT_Contrast_Widget::CT_Contrast_Widget(vtkSmartPointer<vtkImageAccumulate> image
     this->barWidget = new Contrast_Barchart_Widget(&this->hist, this->histMin, this->histMax, this);
     ui.horizontalLayout->addWidget(this->barWidget);
     if (first_init) {
-        this->barWidget->initPoints(ui.horizontalLayoutWidget->geometry().height(), ui.horizontalLayoutWidget->geometry().width());
+        this->barWidget->initPoints(ui.horizontalLayoutWidget->geometry().height(), ui.horizontalLayoutWidget->geometry().width(), -1000, 1000);
         first_init = false;
     }
     else {

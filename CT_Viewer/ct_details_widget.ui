@@ -6,86 +6,87 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>535</width>
-    <height>430</height>
+    <width>538</width>
+    <height>440</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QTableWidget" name="tableWidget">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>40</y>
-     <width>491</width>
-     <height>350</height>
-    </rect>
-   </property>
-   <property name="gridStyle">
-    <enum>Qt::DashLine</enum>
-   </property>
-   <property name="rowCount">
-    <number>20</number>
-   </property>
-   <property name="columnCount">
-    <number>2</number>
-   </property>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <row/>
-   <column/>
-   <column/>
-  </widget>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>10</y>
-     <width>311</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>The detailed meta information for this CT series:</string>
-   </property>
-   <property name="textFormat">
-    <enum>Qt::AutoText</enum>
-   </property>
-   <property name="wordWrap">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="okButton">
-   <property name="geometry">
-    <rect>
-     <x>230</x>
-     <y>400</y>
-     <width>75</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>OK</string>
-   </property>
-  </widget>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>The detailed meta information for this CT series:</string>
+     </property>
+     <property name="textFormat">
+      <enum>Qt::AutoText</enum>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTableWidget" name="tableWidget">
+     <property name="gridStyle">
+      <enum>Qt::DashLine</enum>
+     </property>
+     <property name="rowCount">
+      <number>20</number>
+     </property>
+     <property name="columnCount">
+      <number>2</number>
+     </property>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <column/>
+     <column/>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>37</width>
+         <height>17</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="okButton">
+       <property name="text">
+        <string>OK</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>
