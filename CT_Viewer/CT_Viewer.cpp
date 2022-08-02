@@ -116,6 +116,8 @@ CT_Viewer::~CT_Viewer()
     delete this->ctImage;
 }
 
+// ask to input filename, save it as pixmap to local directory
+// now only support PNG format
 void CT_Viewer::takeScreenshot(QWidget* widget)
 {
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save Screen Shot..."),"../screenshot.png",tr("Images (*.png)"));
@@ -126,6 +128,8 @@ void CT_Viewer::takeScreenshot(QWidget* widget)
     pixmap.save(&file, "PNG");
 }
 
+// trigger when click open, open another image and reload the CT_Image
+// TODO: bugs when load another picture
 void CT_Viewer::loadCT()
 {
     // load file directory
@@ -161,6 +165,8 @@ void CT_Viewer::loadCT()
     CT_Contrast_Widget::first_init = true;
 }
 
+// when add button clicked, add different screw type to 
+// the 3D view, pop out message dialog to select screw type
 void CT_Viewer::handleAdd()
 {
     if (!this->CT_uploaded) {
@@ -187,6 +193,8 @@ void CT_Viewer::handleAdd()
     }
 }
 
+// merge the screw polygonal data with CT Image
+// reslice the Image and update scenes
 void CT_Viewer::handleConfirm()
 {
     if (!this->CT_uploaded) {
@@ -211,6 +219,7 @@ void CT_Viewer::handleConfirm()
     msgBox.exec();
 }
 
+// remove all existing screws
 void CT_Viewer::handleClear()
 {
     if (!this->CT_uploaded) {
@@ -228,6 +237,7 @@ void CT_Viewer::handleClear()
     msgBox.exec();
 }
 
+// pop out a message box with a table for detailed CT info
 void CT_Viewer::handleDetail()
 {
     if (!this->CT_uploaded) {
@@ -239,6 +249,7 @@ void CT_Viewer::handleDetail()
     detail_widget->show();
 }
 
+// control the zoom in and zoom out of the 3D view
 void CT_Viewer::handle3DView()
 {
     bool checked = ui.d3Button->isChecked();
@@ -260,6 +271,7 @@ void CT_Viewer::handle3DView()
     }
 }
 
+// control the zoom in and zoom out of the axial view
 void CT_Viewer::handleAxialView()
 {
     bool checked = ui.axialButton->isChecked();
@@ -280,6 +292,7 @@ void CT_Viewer::handleAxialView()
     }
 }
 
+// control the zoom in and zoom out of the coronal view
 void CT_Viewer::handleCoronalView()
 {
     bool checked = ui.coronalButton->isChecked();
@@ -300,6 +313,8 @@ void CT_Viewer::handleCoronalView()
     }
 }
 
+
+// control the zoom in and zoom out of the sagittal view
 void CT_Viewer::handleSagittalView()
 {
     bool checked = ui.sagittalButton->isChecked();
@@ -320,32 +335,38 @@ void CT_Viewer::handleSagittalView()
     }
 }
 
+// take screen shot of the 3D view widget window
 void CT_Viewer::handle3DScreenshot()
 {
     takeScreenshot(this->ui.mainViewWidget);
 }
 
+// take screen shot of the axial view widget window
 void CT_Viewer::handleAxialScreenshot()
 {
     takeScreenshot(this->ui.axialViewWidget);
 }
 
+// take screen shot of the coronal view widget window
 void CT_Viewer::handleCoronalScreenshot()
 {
     takeScreenshot(this->ui.coronalViewWidget);
 }
 
+// take screen shot of the sagittal view widget window
 void CT_Viewer::handleSagittalScreenshot()
 {
     takeScreenshot(this->ui.sagittalViewWidget);
 }
 
+// TODO: reset the 3D scene to the front view
 void CT_Viewer::handle3DReset()
 {
     qDebug() << "reset";
     this->ui.mainViewWidget->reset();
 }
 
+// pop out a widget for contrast adjustment, the widget will connect with 2D views
 void CT_Viewer::handleSetContrast()
 {
     if (!this->CT_uploaded) {
@@ -355,11 +376,13 @@ void CT_Viewer::handleSetContrast()
     contrast_widget->setAttribute(Qt::WA_DeleteOnClose);
     contrast_widget->show();
     // connect contrast change signal with ct_2d_widgets
+    // qt will auto disconnect signals when the object is deleted
     connect(contrast_widget, &CT_Contrast_Widget::contrastAdjusted, this->ui.sagittalViewWidget, &CT_2d_Widget::updateColorMap);
     connect(contrast_widget, &CT_Contrast_Widget::contrastAdjusted, this->ui.coronalViewWidget, &CT_2d_Widget::updateColorMap);
     connect(contrast_widget, &CT_Contrast_Widget::contrastAdjusted, this->ui.axialViewWidget, &CT_2d_Widget::updateColorMap);
 }
 
+// direction buttons and how screws will move when one direction button is clicked
 void CT_Viewer::onScrewButtonClick()
 {
     QObject* obj = sender();
@@ -383,6 +406,7 @@ void CT_Viewer::onScrewButtonClick()
     }
 }
 
+// when slider change, update the spin box and also 3D scene screw orientation
 void CT_Viewer::onScrewSliderChange(double value)
 {
     QObject* obj = sender();
@@ -394,6 +418,9 @@ void CT_Viewer::onScrewSliderChange(double value)
     }
 }
 
+// this is required, don't know why
+// must be called after constructor
+// put this code in constructor will lead to an empty scene of 2D views
 void CT_Viewer::init2DViews()
 {
     ui.axialViewWidget->GetRenderWindow()->Render();

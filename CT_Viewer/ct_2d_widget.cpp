@@ -251,13 +251,13 @@ void CT_2d_Widget::updateWhenScrollbarChanged(int value)
 {
     switch (this->mode) {
     case Sagittal:
-        this->reslice->SetResliceAxesOrigin(value, this->sliceCenter[1], this->sliceCenter[2]);
+        this->reslice->SetResliceAxesOrigin(value, this->modelCenter[1], this->modelCenter[2]);
         break;
     case Coronal:
-        this->reslice->SetResliceAxesOrigin(this->sliceCenter[0], value, this->sliceCenter[2]);
+        this->reslice->SetResliceAxesOrigin(this->modelCenter[0], value, this->modelCenter[2]);
         break;
     case Axial:
-        this->reslice->SetResliceAxesOrigin(this->sliceCenter[0], this->sliceCenter[1], value);
+        this->reslice->SetResliceAxesOrigin(this->modelCenter[0], this->modelCenter[1], value);
         break;
     }
     this->reslice->Update();
