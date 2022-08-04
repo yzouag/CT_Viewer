@@ -6,3 +6,5 @@ CT*/
 !CT_Viewer/
 x64/
 *.vcxproj*
+json/
+cache/

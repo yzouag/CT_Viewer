@@ -2,6 +2,7 @@
 
 #include <QWidget>
 #include "ui_entry_widget.h"
+#include <QListWidgetItem>
 
 class Entry_Widget : public QWidget
 {
@@ -13,8 +14,11 @@ public:
 
 private:
     Ui::Entry_Widget ui;
+    void loadRecentImages();
+    void blockAllSignals();
 
 private slots:
     void handleOpenImage();
     void handleOpenWorkspace();
+    void handleSelectHistoryImage(QListWidgetItem* item);
 };

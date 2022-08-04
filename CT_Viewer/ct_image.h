@@ -16,7 +16,7 @@ class CT_Image
 public:
     CT_Image();
     ~CT_Image();
-    void loadDicomFromDirectory(const char* path, QProgressDialog* dialog);
+    void loadDicomFromDirectory(QString path, QProgressDialog* dialog);
     vtkSmartPointer<vtkImageData> getCTImageData();
     vtkSmartPointer<vtkImageReslice> getCTImageReslice(int axis);
     vtkSmartPointer<vtkImageAccumulate> getCTImageAccumulate();
@@ -24,6 +24,7 @@ public:
     bool checkLoadSuccess();
     void updateImage(QVector<PlantingScrews*> screwList);
     void resetImage();
+    QString getFilePath();
 
 private:
     double const VIEWDIRECTIONMATRIX[3][16] = {
@@ -53,5 +54,5 @@ private:
     vtkSmartPointer<vtkImageReslice> ctReslices[3];
     QMap<QString, QString> metaInfo;
     bool load_succeed;
-    const char* path;
+    QString path;
 };

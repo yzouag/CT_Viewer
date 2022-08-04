@@ -28,6 +28,8 @@ public:
     void sendResliceSignal();
     double* getModelCenter();
     void setScrollBar(QScrollBar* scrollBar);
+    double* getSliceCenter();
+    int* getContrastThreshold();
 
 public slots:
     void updateWhenCursorPosChange(int x, int y, ViewMode comingSignalViewMode);
@@ -49,6 +51,7 @@ private:
     QScrollBar* scrollBar;
     double modelCenter[3];
     double sliceCenter[3];
+    int contrastThreshold[2] = { -1000, 1000};
     void setWindowTitle();
     void updateCursorPos();
     void updateReslicePos();

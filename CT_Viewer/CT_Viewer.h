@@ -21,9 +21,10 @@ public:
     CT_Viewer(CT_Image* ctImage, QWidget *parent = Q_NULLPTR);
     ~CT_Viewer();
     void init2DViews();
+    void loadSliceAndThreshold(double* sliceCenter, int* contrastThreshold);
 
 private:
-    bool CT_uploaded = false;     // CT_uploaded allows other buttons to function
+    bool CT_uploaded = false; // CT_uploaded allows other buttons to function
     Ui::CT_ViewerClass ui;
     CT_Image* ctImage;
     void takeScreenshot(QWidget* widget);

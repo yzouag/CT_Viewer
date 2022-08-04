@@ -54,7 +54,7 @@ void CT_2d_Widget::renderCTReslice(vtkImageReslice * reslice)
 
     // define look up table and create the image actor
     vtkNew<vtkLookupTable> lookupTable;
-    lookupTable->SetRange(-1000, 1000);
+    lookupTable->SetRange(this->contrastThreshold[0], this->contrastThreshold[1]);
     lookupTable->SetValueRange(0.0, 1.0);
     lookupTable->SetSaturationRange(0.0, 0.0);
     lookupTable->SetRampToLinear();
@@ -166,6 +166,16 @@ void CT_2d_Widget::setScrollBar(QScrollBar * scrollBar)
     scrollBar->setTracking(true);
 }
 
+double * CT_2d_Widget::getSliceCenter()
+{
+    return this->sliceCenter;
+}
+
+int * CT_2d_Widget::getContrastThreshold()
+{
+    return this->contrastThreshold;
+}
+
 // must be done after set view mode
 void CT_2d_Widget::setWindowTitle()
 {
@@ -245,6 +255,8 @@ void CT_2d_Widget::updateColorMap(int lower, int upper)
     this->mapToColor->SetLookupTable(lookupTable);
     this->mapToColor->Modified();
     this->renWin->Render();
+    this->contrastThreshold[0] = lower;
+    this->contrastThreshold[1] = upper;
 }
 
 void CT_2d_Widget::updateWhenScrollbarChanged(int value)

@@ -1,5 +1,6 @@
 #include "CT_Viewer.h"
 #include <QFileDialog.h>
+#include <QDir>
 #include <QDebug>
 #include "vtkHelper.h"
 #include "uiHelper.h"
@@ -8,6 +9,7 @@
 #include "ScrewOptionWidget.h"
 #include "ct_details_widget.h"
 #include "ct_contrast_widget.h"
+#include "image_register.h"
 
 CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
 {
@@ -111,8 +113,20 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
     CT_Contrast_Widget::first_init = true;
 }
 
+// really ugly design, hope someday I will learn how to do this
+// no any experience about using exceptions
 CT_Viewer::~CT_Viewer()
 {
+    qDebug() << QDir(this->ctImage->getFilePath()).dirName() << this->ctImage->getFilePath();
+    try {
+        ImageRegister imageInfo(QDir(this->ctImage->getFilePath()).dirName(), this->ctImage->getFilePath(), this->ui.axialViewWidget);
+        imageInfo.setContrastThreshold(this->ui.axialViewWidget->getContrastThreshold()[0], this->ui.axialViewWidget->getContrastThreshold()[1]);
+        imageInfo.setSliceCenter(this->ui.axialViewWidget->getSliceCenter());
+        imageInfo.save();
+    }
+    catch(int num){
+        qDebug() << "Failed to create directory";
+    }
     delete this->ctImage;
 }
 
@@ -135,7 +149,7 @@ void CT_Viewer::loadCT()
     // load file directory
     QString filename = QFileDialog::getExistingDirectory(this, "CT file directory", "../");
     QProgressDialog* progressDialog = createProgressDialog(tr("CT Loading"), tr("Loading CT, Please Wait..."), 100);
-    this->ctImage->loadDicomFromDirectory(filename.toStdString().c_str(), progressDialog);
+    this->ctImage->loadDicomFromDirectory(filename, progressDialog);
     
     // check the path is valid
     if (!this->ctImage->checkLoadSuccess()) {
@@ -426,4 +440,15 @@ void CT_Viewer::init2DViews()
     ui.axialViewWidget->GetRenderWindow()->Render();
     ui.coronalViewWidget->GetRenderWindow()->Render();
     ui.sagittalViewWidget->GetRenderWindow()->Render();
+}
+
+void CT_Viewer::loadSliceAndThreshold(double* sliceCenter, int* contrastThreshold)
+{
+    // load color contrast
+    ui.sagittalViewWidget->updateColorMap(contrastThreshold[0], contrastThreshold[1]);
+    ui.coronalViewWidget->updateColorMap(contrastThreshold[0], contrastThreshold[1]);
+    ui.axialViewWidget->updateColorMap(contrastThreshold[0], contrastThreshold[1]);
+
+    // load slice center
+    // ...
 }

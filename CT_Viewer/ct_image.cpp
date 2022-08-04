@@ -16,6 +16,7 @@
 #include <vtkPolyDataReader.h>
 #include <vtkPolyDataToImageStencil.h>
 #include <itkCommand.h>
+#include <QDebug>
 
 CT_Image::CT_Image()
 {
@@ -50,7 +51,7 @@ private:
     QProgressDialog* dialog;
 };
 
-void CT_Image::loadDicomFromDirectory(const char * path, QProgressDialog * dialog)
+void CT_Image::loadDicomFromDirectory(QString path, QProgressDialog * dialog)
 {
     this->load_succeed = false;
     // load meta data
@@ -62,7 +63,7 @@ void CT_Image::loadDicomFromDirectory(const char * path, QProgressDialog * dialo
 
     // read in DICOM file
     vtkNew<vtkDICOMImageReader> reader;
-    reader->SetDirectoryName(path);
+    reader->SetDirectoryName(path.toStdString().c_str());
     reader->SetDataSpacing(3.2, 3.2, 1.5);
     reader->SetDataByteOrderToLittleEndian();
 
@@ -163,7 +164,7 @@ void CT_Image::loadMetaInfo(QProgressDialog* dialog)
     // define file names loader
     using NamesGeneratorType = itk::GDCMSeriesFileNames;
     auto nameGenerator = NamesGeneratorType::New();
-    nameGenerator->SetInputDirectory(this->path);
+    nameGenerator->SetInputDirectory(this->path.toStdString().c_str());
     nameGenerator->SetGlobalWarningDisplay(false);
     using FileNamesContainer = std::vector<std::string>;
     FileNamesContainer fileNames = nameGenerator->GetInputFileNames();
@@ -366,4 +367,9 @@ void CT_Image::updateImage(QVector<PlantingScrews*> screwList)
 void CT_Image::resetImage()
 {
     this->ctImage->DeepCopy(this->originImage);
+}
+
+QString CT_Image::getFilePath()
+{
+    return this->path;
 }
