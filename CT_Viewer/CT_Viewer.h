@@ -22,6 +22,7 @@ public:
     ~CT_Viewer();
     void init2DViews();
     void loadSliceAndThreshold(double* sliceCenter, int* contrastThreshold);
+    void loadCameraSettings(double* cameraPos, double* focalPoint);
 
 private:
     bool CT_uploaded = false; // CT_uploaded allows other buttons to function

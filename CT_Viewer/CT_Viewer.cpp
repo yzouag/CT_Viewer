@@ -10,6 +10,8 @@
 #include "ct_details_widget.h"
 #include "ct_contrast_widget.h"
 #include "image_register.h"
+#include <vtkCamera.h>
+#include <vtkRendererCollection.h>
 
 CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
 {
@@ -119,6 +121,7 @@ CT_Viewer::~CT_Viewer()
         ImageRegister imageInfo(QDir(this->ctImage->getFilePath()).dirName(), this->ctImage->getFilePath(), this->ui.axialViewWidget);
         imageInfo.setContrastThreshold(this->ctImage->getContrastThreshold()[0], this->ctImage->getContrastThreshold()[1]);
         imageInfo.setSliceCenter(this->ctImage->getSliceCenter());
+        ui.mainViewWidget->getCameraSettings(imageInfo.getCameraPos(), imageInfo.getFocalPoint());
         imageInfo.save();
     }
     catch(int num){
@@ -468,4 +471,10 @@ void CT_Viewer::loadSliceAndThreshold(double* sliceCenter, int* contrastThreshol
     ui.sagittalViewWidget->updateWhenSliceCenterChange(sliceCenter[0], sliceCenter[1], sliceCenter[2]);
     ui.coronalViewWidget->updateWhenSliceCenterChange(sliceCenter[0], sliceCenter[1], sliceCenter[2]);
     ui.axialViewWidget->updateWhenSliceCenterChange(sliceCenter[0], sliceCenter[1], sliceCenter[2]);
+}
+
+void CT_Viewer::loadCameraSettings(double * cameraPos, double * focalPoint)
+{
+    this->ui.mainViewWidget->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->GetActiveCamera()->SetPosition(cameraPos);
+    this->ui.mainViewWidget->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->GetActiveCamera()->SetFocalPoint(focalPoint);
 }

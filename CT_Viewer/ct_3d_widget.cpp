@@ -17,6 +17,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType);
 #include <vtkTransform.h>
 #include <vtkNamedColors.h>
 #include <vtkLegendScaleActor.h>
+#include <vtkCamera.h>
 #include <QDebug>
 
 namespace {
@@ -254,6 +255,17 @@ void CT_3d_Widget::setLastPickedProperty(vtkProperty * lastPickedProperty)
 void CT_3d_Widget::reset()
 {
     this->ren->ResetCamera();
+}
+
+void CT_3d_Widget::getCameraSettings(double * position, double * focalPoint)
+{
+    position[0] = this->ren->GetActiveCamera()->GetPosition()[0];
+    position[1] = this->ren->GetActiveCamera()->GetPosition()[1];
+    position[2] = this->ren->GetActiveCamera()->GetPosition()[2];
+
+    focalPoint[0] = this->ren->GetActiveCamera()->GetFocalPoint()[0];
+    focalPoint[1] = this->ren->GetActiveCamera()->GetFocalPoint()[1];
+    focalPoint[2] = this->ren->GetActiveCamera()->GetFocalPoint()[2];
 }
 
 void CT_3d_Widget::addScrew(const char * screwName)

@@ -39,6 +39,14 @@ ImageRegister::ImageRegister(QString imageCachePath)
 
     this->contrastThreshold[0] = j["contrast_threshold"]["lower"].get<int>();
     this->contrastThreshold[1] = j["contrast_threshold"]["upper"].get<int>();
+
+    this->cameraPos[0] = j["camera"]["position"].get<std::vector<double>>()[0];
+    this->cameraPos[1] = j["camera"]["position"].get<std::vector<double>>()[1];
+    this->cameraPos[2] = j["camera"]["position"].get<std::vector<double>>()[2];
+
+    this->focalPoint[0] = j["camera"]["focal_point"].get<std::vector<double>>()[0];
+    this->focalPoint[1] = j["camera"]["focal_point"].get<std::vector<double>>()[1];
+    this->focalPoint[2] = j["camera"]["focal_point"].get<std::vector<double>>()[2];
 }
 
 ImageRegister::~ImageRegister()
@@ -66,7 +74,14 @@ void ImageRegister::save()
         {"thumbnail", this->thumbnailPath.toStdString()},
         {"created_time", this->createdTime.toStdString()},
         {"slice_center", {this->sliceCenter[0], this->sliceCenter[1], this->sliceCenter[2]}},
-        {"contrast_threshold", {{"lower", this->contrastThreshold[0]}, {"upper", this->contrastThreshold[1]}}}
+        {"contrast_threshold", 
+            {{"lower", this->contrastThreshold[0]}, 
+            {"upper", this->contrastThreshold[1]}}
+        },
+        {"camera", 
+            {{"position", {this->cameraPos[0], this->cameraPos[1], this->cameraPos[2]}},
+            {"focal_point", {this->focalPoint[0], this->focalPoint[1], this->focalPoint[2]}}}
+        }
     };
     QString json_path = this->cachePath + "imageInfo/" + this->fileName + ".json";
     ofstream f(json_path.toStdString().c_str());
@@ -114,4 +129,14 @@ QString ImageRegister::getCreatedTime()
 int * ImageRegister::getContrastThreshold()
 {
     return this->contrastThreshold;
+}
+
+double * ImageRegister::getCameraPos()
+{
+    return this->cameraPos;
+}
+
+double * ImageRegister::getFocalPoint()
+{
+    return this->focalPoint;
 }

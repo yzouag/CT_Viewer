@@ -24,6 +24,8 @@ public:
     double* getSliceCenter();
     QString getCreatedTime();
     int* getContrastThreshold();
+    double* getCameraPos();
+    double* getFocalPoint();
 
 private:
     // location of the registry
@@ -37,4 +39,7 @@ private:
     double sliceCenter[3];
     // current contrast
     int contrastThreshold[2];
+    // current camera settings
+    double focalPoint[3];
+    double cameraPos[3];
 };

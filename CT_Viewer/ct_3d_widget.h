@@ -36,6 +36,7 @@ public:
     vtkProperty* getLastPickedProperty();
     void setLastPickedProperty(vtkProperty* lastPickedProperty);
     void reset();
+    void getCameraSettings(double* position, double* focalPoint);
 
 public slots:
     void loadCT();

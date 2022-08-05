@@ -96,6 +96,7 @@ void Entry_Widget::handleSelectHistoryImage(QListWidgetItem* item)
 
     CT_Viewer* w = new CT_Viewer(ctImage);
     w->loadSliceAndThreshold(selectedImage->getSliceCenter(), selectedImage->getContrastThreshold());
+    w->loadCameraSettings(selectedImage->getCameraPos(), selectedImage->getFocalPoint());
     w->setAttribute(Qt::WA_DeleteOnClose);
     w->show();
     w->init2DViews();
