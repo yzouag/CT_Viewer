@@ -1,17 +1,19 @@
 #include "ct_contrast_widget.h"
 #include <vtkImageData.h>
+#include <vtkImageAccumulate.h>
 #include <QDebug>
 
 int CT_Contrast_Widget::lower_val = 0;
 int CT_Contrast_Widget::upper_val = 0;
 bool CT_Contrast_Widget::first_init = true;
 
-CT_Contrast_Widget::CT_Contrast_Widget(vtkSmartPointer<vtkImageAccumulate> imageAccumulate, QWidget *parent) : QWidget(parent, Qt::Window)
+CT_Contrast_Widget::CT_Contrast_Widget(CT_Image* ctImage, QWidget *parent) : QWidget(parent, Qt::Window)
 {
     ui.setupUi(this);
 
     // process image to get the histogram
-    getHistogram(imageAccumulate);
+    this->ctImage = ctImage;
+    getHistogram(ctImage->getCTImageAccumulate());
     
     // create the bar chart, add it to widget and get the layout width, height
     this->barWidget = new Contrast_Barchart_Widget(&this->hist, this->histMin, this->histMax, this);
@@ -79,7 +81,7 @@ void CT_Contrast_Widget::updateUpperAndLower(int lower, int upper)
     this->upperValidator->setBottom(lower);
 
     // send signal to CT image for update
-    emit contrastAdjusted(lower, upper);
+    this->ctImage->updateContrastThreshold(lower, upper);
 }
 
 void CT_Contrast_Widget::handleLineInput()
@@ -93,7 +95,7 @@ void CT_Contrast_Widget::handleLineInput()
     this->upperValidator->setBottom(upper);
 
     // send signal to bar chart and CT image
-    emit contrastAdjusted(lower, upper);
+    this->ctImage->updateContrastThreshold(lower, upper);
     emit lineEditUpdated(lower, upper);
 }
 

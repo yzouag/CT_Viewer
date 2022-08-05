@@ -1,11 +1,10 @@
 #pragma once
 #include <vtkCommand.h>
-#include <vtkImageReslice.h>
-#include <vtkImageMapToColors.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkSmartPointer.h>
 #include <vtkCursor2D.h>
 #include <vtkRenderer.h>
+#include "ct_image.h"
 #include "ct_2d_widget.h"
 
 class resliceInteractionCallback : public vtkCommand
@@ -21,19 +20,17 @@ public:
     void setCursor(vtkSmartPointer<vtkCursor2D> cursor);
     void setInteractor(vtkSmartPointer<vtkRenderWindowInteractor> interactor);
     void setRender(vtkSmartPointer<vtkRenderer> render);
-    void setImageReslice(vtkSmartPointer<vtkImageReslice> reslice);
-    void setMapToColors(vtkSmartPointer<vtkImageMapToColors> colors);
-    void setQTWidget(CT_2d_Widget* qtWidget);
+    void setImageReslice(CT_2d_Widget* imageWindowWidget);
+    void setCTImage(CT_Image* ctImage);
 
 private:
     bool isSlicing;
     bool isToggled;
-    vtkSmartPointer<vtkImageReslice> imageReslice;
-    vtkSmartPointer<vtkImageMapToColors> mapToColors;
+    CT_2d_Widget* imageWindowWidget;
     vtkSmartPointer<vtkCursor2D> cursor;
     vtkSmartPointer<vtkRenderWindowInteractor> interactor;
     vtkSmartPointer<vtkRenderer> ren;
-    CT_2d_Widget* qtWidget;
+    CT_Image* ctImage;
     void updateCursorPos();
     void updateReslicePos();
     bool isOutBound(double x, double y, double z);

@@ -9,7 +9,7 @@ resliceInteractionCallback::resliceInteractionCallback()
 {
     this->isSlicing = false;
     this->isToggled = false;
-    this->imageReslice = nullptr;
+    this->imageWindowWidget = nullptr;
     this->interactor = nullptr;
     this->cursor = nullptr;
     this->ren = nullptr;
@@ -62,19 +62,14 @@ void resliceInteractionCallback::setRender(vtkSmartPointer<vtkRenderer> render)
     this->ren = render;
 }
 
-void resliceInteractionCallback::setImageReslice(vtkSmartPointer<vtkImageReslice> reslice)
+void resliceInteractionCallback::setImageReslice(CT_2d_Widget * imageWindowWidget)
 {
-    this->imageReslice = reslice;
+    this->imageWindowWidget = imageWindowWidget;
 }
 
-void resliceInteractionCallback::setMapToColors(vtkSmartPointer<vtkImageMapToColors> colors)
+void resliceInteractionCallback::setCTImage(CT_Image * ctImage)
 {
-    this->mapToColors = colors;
-}
-
-void resliceInteractionCallback::setQTWidget(CT_2d_Widget * qtWidget)
-{
-    this->qtWidget = qtWidget;
+    this->ctImage = ctImage;
 }
 
 void resliceInteractionCallback::setInteractor(vtkSmartPointer<vtkRenderWindowInteractor> interactor)
@@ -93,14 +88,21 @@ void resliceInteractionCallback::updateCursorPos()
     coordinateSystem->SetCoordinateSystemToDisplay();
     coordinateSystem->SetValue(1.0 * pos[0], 1.0 * pos[1]);
     double* worldPos = coordinateSystem->GetComputedWorldValue(this->ren);
-    this->cursor->SetFocalPoint(worldPos);
-    
-    // update the cursor and render
-    this->cursor->Modified();
-    this->interactor->Render();
 
-    // send signal to sync other two views
-    this->qtWidget->sendPosSignal();
+    // update the sliceCenter in CT_Image
+    int depth = this->ctImage->getSliceCenter()[this->imageWindowWidget->getViewMode()];
+    double* modelCenter = this->ctImage->getModelCenter();
+    switch (this->imageWindowWidget->getViewMode()) {
+    case Sagittal:
+        this->ctImage->updateSliceCenter(depth, modelCenter[1] - worldPos[0], modelCenter[2] - worldPos[1]);
+        break;
+    case Coronal:
+        this->ctImage->updateSliceCenter(modelCenter[0] - worldPos[0], depth, modelCenter[2] - worldPos[1]);
+        break;
+    case Axial:
+        this->ctImage->updateSliceCenter(modelCenter[0] - worldPos[0], modelCenter[1] + worldPos[1], depth); // this is very tricky and error prone
+        break;
+    }
 }
 
 void resliceInteractionCallback::updateReslicePos()
@@ -112,9 +114,9 @@ void resliceInteractionCallback::updateReslicePos()
     int deltaY = lastPos[1] - curPos[1];
     
     // set the new reslice origin
-    this->imageReslice->Update();
-    double spacing = this->imageReslice->GetOutput()->GetSpacing()[2];
-    vtkMatrix4x4* matrix = this->imageReslice->GetResliceAxes();
+    this->imageWindowWidget->getReslice()->Update();
+    double spacing = this->imageWindowWidget->getReslice()->GetOutput()->GetSpacing()[2];
+    vtkMatrix4x4* matrix = this->imageWindowWidget->getReslice()->GetResliceAxes();
     double point[4], center[4];
     point[0] = 0.0;
     point[1] = 0.0;
@@ -126,24 +128,15 @@ void resliceInteractionCallback::updateReslicePos()
         return;
     }
 
-    matrix->MultiplyPoint(point, center);
-    matrix->SetElement(0, 3, center[0]);
-    matrix->SetElement(1, 3, center[1]);
-    matrix->SetElement(2, 3, center[2]);
-
-    // update the render
-    this->mapToColors->Update();
-    this->interactor->Render();
-
-    // send the signal to sync other two views
-    this->qtWidget->sendResliceSignal();
+    // update the slice center in CT_Image
+    this->ctImage->updateSliceCenter(center[0], center[1], center[2]);
 }
 
 bool resliceInteractionCallback::isOutBound(double x, double y, double z)
 {
-    double x_bound = this->qtWidget->getModelCenter()[0];
-    double y_bound = this->qtWidget->getModelCenter()[1];
-    double z_bound = this->qtWidget->getModelCenter()[2];
+    double x_bound = this->ctImage->getModelCenter()[0];
+    double y_bound = this->ctImage->getModelCenter()[1];
+    double z_bound = this->ctImage->getModelCenter()[2];
     if (x > x_bound || y > y_bound || z > z_bound)
         return true;
     else

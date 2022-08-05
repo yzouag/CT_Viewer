@@ -19,12 +19,14 @@ VTK_MODULE_INIT(vtkRenderingFreeType);
 
 CT_2d_Widget::CT_2d_Widget(QWidget *parent = Q_NULLPTR)
 {
+    // create the render window and set it to the CT_2D_widget
     vtkNew<vtkGenericOpenGLRenderWindow> win;
     win->SetSize(230, 180);
     win->SetMultiSamples(0);
     this->renWin = win;
     this->SetRenderWindow(this->renWin);
 
+    // create the render and add it to the window
     vtkNew<vtkRenderer> render;
     this->renWin->AddRenderer(render);
     this->ren = render;
@@ -40,21 +42,13 @@ void CT_2d_Widget::setViewMode(ViewMode mode)
     setWindowTitle();
 }
 
-void CT_2d_Widget::renderCTReslice(vtkImageReslice * reslice)
+void CT_2d_Widget::renderCTReslice(CT_Image * ctImage)
 {
-    this->reslice = reslice;
-
-    // initialize the model center and the slice center
-    // the slice center is at model center when image reslice
-    // created, and it will change after cursor position update
-    for (int i = 0; i < 3; i++) {
-        this->sliceCenter[i] = reslice->GetResliceAxesOrigin()[i];
-        this->modelCenter[i] = reslice->GetResliceAxesOrigin()[i];
-    }
+    this->ctImage = ctImage;
 
     // define look up table and create the image actor
     vtkNew<vtkLookupTable> lookupTable;
-    lookupTable->SetRange(this->contrastThreshold[0], this->contrastThreshold[1]);
+    lookupTable->SetRange(this->ctImage->getContrastThreshold()[0], this->ctImage->getContrastThreshold()[1]);
     lookupTable->SetValueRange(0.0, 1.0);
     lookupTable->SetSaturationRange(0.0, 0.0);
     lookupTable->SetRampToLinear();
@@ -63,7 +57,7 @@ void CT_2d_Widget::renderCTReslice(vtkImageReslice * reslice)
     vtkNew<vtkImageMapToColors> mapToColors;
     this->mapToColor = mapToColors;
     mapToColors->SetLookupTable(lookupTable);
-    mapToColors->SetInputConnection(this->reslice->GetOutputPort());
+    mapToColors->SetInputConnection(this->ctImage->getCTImageReslice(this->mode)->GetOutputPort());
     mapToColors->Update();
 
     vtkNew<vtkImageActor> imageActor;
@@ -103,13 +97,12 @@ void CT_2d_Widget::renderCTReslice(vtkImageReslice * reslice)
 
     // define logics for reslice the model and cursor interaction
     vtkNew<resliceInteractionCallback> callback;
-    callback->setImageReslice(this->reslice);
-    callback->setMapToColors(mapToColors);
+    callback->setImageReslice(this);
     callback->setInteractor(interactor);
     callback->setCursor(cursor);
     callback->setInteractor(interactor);
     callback->setRender(this->ren);
-    callback->setQTWidget(this);
+    callback->setCTImage(this->ctImage);
 
     imageStyle->AddObserver(vtkCommand::RightButtonPressEvent, callback);
     imageStyle->AddObserver(vtkCommand::RightButtonReleaseEvent, callback);
@@ -123,32 +116,9 @@ void CT_2d_Widget::renderCTReslice(vtkImageReslice * reslice)
 
 void CT_2d_Widget::updateCTReslice(vtkImageData* ctImage)
 {
-    this->reslice->SetInputData(0, ctImage);
-    this->reslice->Modified();
+    this->ctImage->getCTImageReslice(this->mode)->SetInputData(0, ctImage);
+    this->ctImage->getCTImageReslice(this->mode)->Modified();
     this->renWin->Render();
-}
-
-void CT_2d_Widget::sendPosSignal()
-{
-    emit cursorPosChange(this->cursor->GetFocalPoint()[0], this->cursor->GetFocalPoint()[1], this->mode);
-}
-
-void CT_2d_Widget::sendResliceSignal()
-{
-    double position[3];
-    this->reslice->GetResliceAxesOrigin(position);
-
-    // update the current view's scrollbar
-    this->scrollBar->blockSignals(true);
-    this->scrollBar->setValue(position[this->mode]);
-    this->scrollBar->blockSignals(false);
-    // send the signal to other two views to update the cursor
-    emit reslicePosChange(position[this->mode], this->mode);
-}
-
-double * CT_2d_Widget::getModelCenter()
-{
-    return this->modelCenter;
 }
 
 // this function must go after renderCTReslices
@@ -156,24 +126,25 @@ void CT_2d_Widget::setScrollBar(QScrollBar * scrollBar)
 {
     this->scrollBar = scrollBar;
     scrollBar->setMinimum(0);
-    scrollBar->setMaximum(this->modelCenter[mode] * 2); // WARNING: not sure about the boundary, should we -1?
+    scrollBar->setMaximum(this->ctImage->getModelCenter()[mode] * 2); // WARNING: not sure about the boundary, should we -1?
     
     // block the signal when we set value without user interactions
     // this will avoid the signal emitting and other two views being affected
     scrollBar->blockSignals(true);
-    scrollBar->setValue(this->modelCenter[mode]);
+    scrollBar->setValue(this->ctImage->getModelCenter()[mode]);
     scrollBar->blockSignals(false);
     scrollBar->setTracking(true);
 }
 
-double * CT_2d_Widget::getSliceCenter()
+vtkImageReslice * CT_2d_Widget::getReslice()
 {
-    return this->sliceCenter;
+    return this->ctImage->getCTImageReslice(this->mode);
 }
 
-int * CT_2d_Widget::getContrastThreshold()
+// to check which view mode, sagittal, coronal or axial
+ViewMode CT_2d_Widget::getViewMode()
 {
-    return this->contrastThreshold;
+    return this->mode;
 }
 
 // must be done after set view mode
@@ -182,69 +153,52 @@ void CT_2d_Widget::setWindowTitle()
     setHeader(this->ren, this->mode);
 }
 
-void CT_2d_Widget::updateCursorPos()
+// this function will update reslice, cursor and scroll bar position
+// x, y, z represents sagittal, coronal and axial axis
+void CT_2d_Widget::updateWhenSliceCenterChange(double x, double y, double z)
 {
-    double x, y;
+    double cursor_pos_x, cursor_pos_y;
 
-    // the transform of transform to 3D position is very tricky, be cautious!!!
-    switch (this->mode) {
-    case Sagittal:
-        x = this->modelCenter[1] - this->sliceCenter[1];
-        y = this->modelCenter[2] - this->sliceCenter[2];
-        break;
-    case Coronal:
-        x = this->modelCenter[0] - this->sliceCenter[0];
-        y = this->modelCenter[2] - this->sliceCenter[2];
-        break;
-    case Axial:
-        x = this->modelCenter[0] - this->sliceCenter[0];
-        y = this->sliceCenter[1] - this->modelCenter[1];
-        break;
-    }
-    this->cursor->SetFocalPoint(x, y, 0);
-    this->cursor->Modified();
-    this->renWin->Render();
-}
-
-void CT_2d_Widget::updateReslicePos()
-{
+    // block the scroll bar signal so it will not call updateScrollBar slot
+    this->scrollBar->blockSignals(true);
     switch (this->mode) {
     case Sagittal:
         // a lot of corner cases for these interactions, don't know why
-        this->reslice->SetResliceAxesOrigin(this->modelCenter[0] * 2 - this->sliceCenter[0], this->modelCenter[1], this->modelCenter[2]);
+        this->ctImage->getCTImageReslice(this->mode)->SetResliceAxesOrigin(this->ctImage->getModelCenter()[0] * 2 - x, this->ctImage->getModelCenter()[1], this->ctImage->getModelCenter()[2]);
+        cursor_pos_x = this->ctImage->getModelCenter()[1] - y;
+        cursor_pos_y = this->ctImage->getModelCenter()[2] - z;
+        this->scrollBar->setValue(x);
         break;
     case Coronal:
-        this->reslice->SetResliceAxesOrigin(this->modelCenter[0], this->sliceCenter[1], this->modelCenter[2]);
+        this->ctImage->getCTImageReslice(this->mode)->SetResliceAxesOrigin(this->ctImage->getModelCenter()[0], y, this->ctImage->getModelCenter()[2]);
+        cursor_pos_x = this->ctImage->getModelCenter()[0] - x;
+        cursor_pos_y = this->ctImage->getModelCenter()[2] - z;
+        this->scrollBar->setValue(y);
         break;
     case Axial:
-        this->reslice->SetResliceAxesOrigin(this->modelCenter[0], this->modelCenter[1], this->sliceCenter[2]);
+        this->ctImage->getCTImageReslice(this->mode)->SetResliceAxesOrigin(this->ctImage->getModelCenter()[0], this->ctImage->getModelCenter()[1], z);
+        cursor_pos_x = this->ctImage->getModelCenter()[0] - x;
+        cursor_pos_y = y - this->ctImage->getModelCenter()[1];
+        this->scrollBar->setValue(z);
         break;
     }
-
-    // also update the scroll bar
-    this->scrollBar->blockSignals(true);
-    if (this->mode == Sagittal) {
-        this->scrollBar->setValue(this->modelCenter[0] * 2 - this->sliceCenter[this->mode]);
-    } else {
-        this->scrollBar->setValue(this->sliceCenter[this->mode]);
-    }
+    // unblock the scroll bar for incoming scroll movements
     this->scrollBar->blockSignals(false);
 
-    this->reslice->Modified();
+    // update the cursor and reslice and notify the pipeline
+    this->cursor->SetFocalPoint(cursor_pos_x, cursor_pos_y, 0);
+    this->cursor->Modified();
+    this->ctImage->getCTImageReslice(this->mode)->Modified();
+
+    // render the scene again to show the result
     this->renWin->Render();
 }
 
-void CT_2d_Widget::updateWhenReslicePosChange(int z, ViewMode comingSignalViewMode)
-{
-    if (this->mode == comingSignalViewMode) {
-        return; // if same window, no need to update
-    }
-    this->sliceCenter[comingSignalViewMode] = z;
-    updateCursorPos();
-}
-
+// adjust the lookup table
+// re-render the scene to update the changes
 void CT_2d_Widget::updateColorMap(int lower, int upper)
 {
+    // create a new lookup table for updated contrast value
     vtkNew<vtkLookupTable> lookupTable;
     lookupTable->SetRange(lower, upper);
     lookupTable->SetValueRange(0.0, 1.0);
@@ -255,53 +209,4 @@ void CT_2d_Widget::updateColorMap(int lower, int upper)
     this->mapToColor->SetLookupTable(lookupTable);
     this->mapToColor->Modified();
     this->renWin->Render();
-    this->contrastThreshold[0] = lower;
-    this->contrastThreshold[1] = upper;
-}
-
-void CT_2d_Widget::updateWhenScrollbarChanged(int value)
-{
-    switch (this->mode) {
-    case Sagittal:
-        this->reslice->SetResliceAxesOrigin(value, this->modelCenter[1], this->modelCenter[2]);
-        break;
-    case Coronal:
-        this->reslice->SetResliceAxesOrigin(this->modelCenter[0], value, this->modelCenter[2]);
-        break;
-    case Axial:
-        this->reslice->SetResliceAxesOrigin(this->modelCenter[0], this->modelCenter[1], value);
-        break;
-    }
-    this->reslice->Update();
-    this->renWin->GetInteractor()->Render();
-    if (this->mode == Sagittal) {
-        emit reslicePosChange(this->modelCenter[0] * 2 - value, this->mode);
-    } else {
-        emit reslicePosChange(value, this->mode);
-    }
-}
-
-void CT_2d_Widget::updateWhenCursorPosChange(int x, int y, ViewMode comingSignalViewMode)
-{
-    if (this->mode == comingSignalViewMode) {
-        return; // if same window, no need to update
-    }
-
-    // the transformation of cursor position to global position is very tricky, be cautious!!!
-    switch (comingSignalViewMode) {
-    case Sagittal:
-        this->sliceCenter[1] = modelCenter[1] - x;
-        this->sliceCenter[2] = modelCenter[2] - y;
-        break;
-    case Coronal:
-        this->sliceCenter[0] = modelCenter[0] - x;
-        this->sliceCenter[2] = modelCenter[2] - y;
-        break;
-    case Axial:
-        this->sliceCenter[0] = modelCenter[0] - x;
-        this->sliceCenter[1] = y + modelCenter[1];
-        break;
-    }
-    updateCursorPos();
-    updateReslicePos();
 }

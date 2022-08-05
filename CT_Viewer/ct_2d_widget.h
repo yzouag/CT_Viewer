@@ -9,11 +9,16 @@
 #include <vtkImageActor.h>
 #include <vtkImageMapToColors.h>
 #include <QScrollBar>
+#include "ct_image.h"
 
 namespace Ui {
     class CT_2d_Widget;
 }
 
+// this class is to show three 2D views, Sagittal, Coronal, and Axial View
+// this class is derived from QVTKOpenGLNativeWidget, and can put a vtk window inside
+// the class will receive signal from CT_Image, and set the slice, cursor and scroll
+// bar accordingly
 class CT_2d_Widget : public QVTKOpenGLNativeWidget
 {
     Q_OBJECT;
@@ -22,38 +27,23 @@ public:
     CT_2d_Widget(QWidget *parent);
     ~CT_2d_Widget();
     void setViewMode(ViewMode mode);
-    void renderCTReslice(vtkImageReslice* reslice);
+    void renderCTReslice(CT_Image* ctImage);
     void updateCTReslice(vtkImageData* ctImage);
-    void sendPosSignal();
-    void sendResliceSignal();
-    double* getModelCenter();
     void setScrollBar(QScrollBar* scrollBar);
-    double* getSliceCenter();
-    int* getContrastThreshold();
+    vtkImageReslice* getReslice();
+    ViewMode getViewMode();
 
 public slots:
-    void updateWhenCursorPosChange(int x, int y, ViewMode comingSignalViewMode);
-    void updateWhenReslicePosChange(int z, ViewMode comingSignalViewMode);
+    void updateWhenSliceCenterChange(double x, double y, double z);
     void updateColorMap(int lower, int upper);
-    void updateWhenScrollbarChanged(int value);
-
-signals:
-    void cursorPosChange(int x, int y, ViewMode mode);
-    void reslicePosChange(int z, ViewMode mode);
 
 private:
     vtkGenericOpenGLRenderWindow* renWin;
     vtkRenderer* ren;
     ViewMode mode = ThreeDimension;
-    vtkImageReslice* reslice;
+    CT_Image* ctImage;
     vtkCursor2D* cursor;
     vtkImageMapToColors* mapToColor;
     QScrollBar* scrollBar;
-    double modelCenter[3];
-    double sliceCenter[3];
-    int contrastThreshold[2] = { -1000, 1000};
     void setWindowTitle();
-    void updateCursorPos();
-    void updateReslicePos();
 };
-

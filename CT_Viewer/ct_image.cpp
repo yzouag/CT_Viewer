@@ -80,6 +80,25 @@ void CT_Image::loadDicomFromDirectory(QString path, QProgressDialog * dialog)
     this->ctImage = imageCast->GetOutput();
     this->originImage = imageCast->GetOutput();
 
+    // initialize slice center and model center
+    int extent[6];
+    double spacing[3];
+    double origin[3];
+    double center[3];
+
+    this->ctImage->GetExtent(extent);
+    this->ctImage->GetSpacing(spacing);
+    this->ctImage->GetOrigin(origin);
+
+    // the center position of the 3D model
+    this->modelCenter[0] = origin[0] + spacing[0] * 0.5 * (extent[0] + extent[1]);
+    this->modelCenter[1] = origin[1] + spacing[1] * 0.5 * (extent[2] + extent[3]);
+    this->modelCenter[2] = origin[2] + spacing[2] * 0.5 * (extent[4] + extent[5]);
+
+    this->sliceCenter[0] = this->modelCenter[0];
+    this->sliceCenter[1] = this->modelCenter[1];
+    this->sliceCenter[2] = this->modelCenter[2];
+
     // create three 2D views
     for (int i = 0; i < 3; i++) {
         createReslices(i);
@@ -207,25 +226,11 @@ void CT_Image::loadMetaInfo(QProgressDialog* dialog)
 
 void CT_Image::createReslices(int axis)
 {
-    int extent[6];
-    double spacing[3];
-    double origin[3];
-    double center[3];
-
-    this->ctImage->GetExtent(extent);
-    this->ctImage->GetSpacing(spacing);
-    this->ctImage->GetOrigin(origin);
-
-    // the center position of the 3D model
-    center[0] = origin[0] + spacing[0] * 0.5 * (extent[0] + extent[1]);
-    center[1] = origin[1] + spacing[1] * 0.5 * (extent[2] + extent[3]);
-    center[2] = origin[2] + spacing[2] * 0.5 * (extent[4] + extent[5]);
-
     vtkNew<vtkMatrix4x4> resliceAxes;
     resliceAxes->DeepCopy(VIEWDIRECTIONMATRIX[axis]);
-    resliceAxes->SetElement(0, 3, center[0]);
-    resliceAxes->SetElement(1, 3, center[1]);
-    resliceAxes->SetElement(2, 3, center[2]);
+    resliceAxes->SetElement(0, 3, this->modelCenter[0]);
+    resliceAxes->SetElement(1, 3, this->modelCenter[1]);
+    resliceAxes->SetElement(2, 3, this->modelCenter[2]);
 
     vtkNew<vtkImageReslice> imageReslice;
     imageReslice->SetInputData(this->ctImage);
@@ -372,4 +377,34 @@ void CT_Image::resetImage()
 QString CT_Image::getFilePath()
 {
     return this->path;
+}
+
+double * CT_Image::getModelCenter()
+{
+    return this->modelCenter;
+}
+
+double * CT_Image::getSliceCenter()
+{
+    return this->sliceCenter;
+}
+
+int * CT_Image::getContrastThreshold()
+{
+    return this->contrastThreshold;
+}
+
+void CT_Image::updateSliceCenter(double x, double y, double z)
+{
+    this->sliceCenter[0] = x;
+    this->sliceCenter[1] = y;
+    this->sliceCenter[2] = z;
+    emit sliceCenterChange(x, y, z);
+}
+
+void CT_Image::updateContrastThreshold(int lower, int upper)
+{
+    this->contrastThreshold[0] = lower;
+    this->contrastThreshold[1] = upper;
+    emit contrastThresholdChange(lower, upper);
 }

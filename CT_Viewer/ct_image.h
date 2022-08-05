@@ -11,8 +11,9 @@
 #include <QVector>
 #include <QMap>
 
-class CT_Image
+class CT_Image : public QObject
 {
+    Q_OBJECT;
 public:
     CT_Image();
     ~CT_Image();
@@ -25,6 +26,17 @@ public:
     void updateImage(QVector<PlantingScrews*> screwList);
     void resetImage();
     QString getFilePath();
+    double* getModelCenter();
+    double* getSliceCenter();
+    int* getContrastThreshold();
+
+public slots:
+    void updateSliceCenter(double x, double y, double z);
+    void updateContrastThreshold(int lower, int upper);
+
+signals:
+    void sliceCenterChange(double x, double y, double z);
+    void contrastThresholdChange(int lower, int upper);
 
 private:
     double const VIEWDIRECTIONMATRIX[3][16] = {
@@ -55,4 +67,8 @@ private:
     QMap<QString, QString> metaInfo;
     bool load_succeed;
     QString path;
+
+    double sliceCenter[3];
+    double modelCenter[3];
+    int contrastThreshold[2] = {-1000, 1000};
 };

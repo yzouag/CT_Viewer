@@ -39,25 +39,20 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
     connect(ui.detailButton, SIGNAL(clicked()), this, SLOT(handleDetail()));
     connect(ui.actionSet_Contrast, SIGNAL(triggered()), this, SLOT(handleSetContrast()));
 
-    // connect for 2D view interactions (cursor location update, reslice pos update)
-    connect(ui.sagittalViewWidget, &CT_2d_Widget::cursorPosChange, ui.coronalViewWidget, &CT_2d_Widget::updateWhenCursorPosChange);
-    connect(ui.sagittalViewWidget, &CT_2d_Widget::cursorPosChange, ui.axialViewWidget, &CT_2d_Widget::updateWhenCursorPosChange);
-    connect(ui.coronalViewWidget, &CT_2d_Widget::cursorPosChange, ui.sagittalViewWidget, &CT_2d_Widget::updateWhenCursorPosChange);
-    connect(ui.coronalViewWidget, &CT_2d_Widget::cursorPosChange, ui.axialViewWidget, &CT_2d_Widget::updateWhenCursorPosChange);
-    connect(ui.axialViewWidget, &CT_2d_Widget::cursorPosChange, ui.sagittalViewWidget, &CT_2d_Widget::updateWhenCursorPosChange);
-    connect(ui.axialViewWidget, &CT_2d_Widget::cursorPosChange, ui.coronalViewWidget, &CT_2d_Widget::updateWhenCursorPosChange);
+    // connect for 2D view interactions (cursor location update, reslice position update)
+    connect(ctImage, &CT_Image::sliceCenterChange, ui.axialViewWidget, &CT_2d_Widget::updateWhenSliceCenterChange);
+    connect(ctImage, &CT_Image::sliceCenterChange, ui.coronalViewWidget, &CT_2d_Widget::updateWhenSliceCenterChange);
+    connect(ctImage, &CT_Image::sliceCenterChange, ui.sagittalViewWidget, &CT_2d_Widget::updateWhenSliceCenterChange);
+    
+    // connect for 2D view color contrast
+    connect(ctImage, &CT_Image::contrastThresholdChange, ui.axialViewWidget, &CT_2d_Widget::updateColorMap);
+    connect(ctImage, &CT_Image::contrastThresholdChange, ui.coronalViewWidget, &CT_2d_Widget::updateColorMap);
+    connect(ctImage, &CT_Image::contrastThresholdChange, ui.sagittalViewWidget, &CT_2d_Widget::updateColorMap);
 
-    connect(ui.sagittalViewWidget, &CT_2d_Widget::reslicePosChange, ui.coronalViewWidget, &CT_2d_Widget::updateWhenReslicePosChange);
-    connect(ui.sagittalViewWidget, &CT_2d_Widget::reslicePosChange, ui.axialViewWidget, &CT_2d_Widget::updateWhenReslicePosChange);
-    connect(ui.coronalViewWidget, &CT_2d_Widget::reslicePosChange, ui.sagittalViewWidget, &CT_2d_Widget::updateWhenReslicePosChange);
-    connect(ui.coronalViewWidget, &CT_2d_Widget::reslicePosChange, ui.axialViewWidget, &CT_2d_Widget::updateWhenReslicePosChange);
-    connect(ui.axialViewWidget, &CT_2d_Widget::reslicePosChange, ui.sagittalViewWidget, &CT_2d_Widget::updateWhenReslicePosChange);
-    connect(ui.axialViewWidget, &CT_2d_Widget::reslicePosChange, ui.coronalViewWidget, &CT_2d_Widget::updateWhenReslicePosChange);
-
-    // connect scrollbar movement with its 2D view (the 2D view will also send signal to other two 2D views to update cursor and scrollbar)
-    connect(ui.axialScrollBar, &QScrollBar::valueChanged, ui.axialViewWidget, &CT_2d_Widget::updateWhenScrollbarChanged);
-    connect(ui.coronalScrollBar, &QScrollBar::valueChanged, ui.coronalViewWidget, &CT_2d_Widget::updateWhenScrollbarChanged);
-    connect(ui.sagittalScrollBar, &QScrollBar::valueChanged, ui.sagittalViewWidget, &CT_2d_Widget::updateWhenScrollbarChanged);
+    // connect scrollbar movement to the change of slice center in CT Image
+    connect(ui.axialScrollBar, &QScrollBar::valueChanged, this, &CT_Viewer::handleAxialScrollBarChange);
+    connect(ui.coronalScrollBar, &QScrollBar::valueChanged, this, &CT_Viewer::handleCoronalScrollBarChange);
+    connect(ui.sagittalScrollBar, &QScrollBar::valueChanged, this, &CT_Viewer::handleSagittalScrollBarChange);
 
     // connect 2D, 3D views expand and resume
     connect(ui.d3Button, SIGNAL(clicked()), this, SLOT(handle3DView()));
@@ -101,9 +96,11 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
     ui.mainViewWidget->loadCT();
 
     // create 2D view for each slice
-    ui.sagittalViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Sagittal));
-    ui.coronalViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Coronal));
-    ui.axialViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Axial));
+    ui.sagittalViewWidget->renderCTReslice(this->ctImage);
+    ui.coronalViewWidget->renderCTReslice(this->ctImage);
+    ui.axialViewWidget->renderCTReslice(this->ctImage);
+
+    // also set the range of the scroll bar
     ui.sagittalViewWidget->setScrollBar(this->ui.sagittalScrollBar);
     ui.coronalViewWidget->setScrollBar(this->ui.coronalScrollBar);
     ui.axialViewWidget->setScrollBar(this->ui.axialScrollBar);
@@ -120,8 +117,8 @@ CT_Viewer::~CT_Viewer()
     qDebug() << QDir(this->ctImage->getFilePath()).dirName() << this->ctImage->getFilePath();
     try {
         ImageRegister imageInfo(QDir(this->ctImage->getFilePath()).dirName(), this->ctImage->getFilePath(), this->ui.axialViewWidget);
-        imageInfo.setContrastThreshold(this->ui.axialViewWidget->getContrastThreshold()[0], this->ui.axialViewWidget->getContrastThreshold()[1]);
-        imageInfo.setSliceCenter(this->ui.axialViewWidget->getSliceCenter());
+        imageInfo.setContrastThreshold(this->ctImage->getContrastThreshold()[0], this->ctImage->getContrastThreshold()[1]);
+        imageInfo.setSliceCenter(this->ctImage->getSliceCenter());
         imageInfo.save();
     }
     catch(int num){
@@ -169,9 +166,14 @@ void CT_Viewer::loadCT()
     ui.mainViewWidget->loadCT();
 
     // create 2D view for each slice
-    ui.sagittalViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Sagittal));
-    ui.coronalViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Coronal));
-    ui.axialViewWidget->renderCTReslice(this->ctImage->getCTImageReslice(Axial));
+    ui.sagittalViewWidget->renderCTReslice(this->ctImage);
+    ui.coronalViewWidget->renderCTReslice(this->ctImage);
+    ui.axialViewWidget->renderCTReslice(this->ctImage);
+
+    // also set the range of the scroll bar
+    ui.sagittalViewWidget->setScrollBar(this->ui.sagittalScrollBar);
+    ui.coronalViewWidget->setScrollBar(this->ui.coronalScrollBar);
+    ui.axialViewWidget->setScrollBar(this->ui.axialScrollBar);
 
     progressDialog->deleteLater();
     // this is to make sure when load a new Dicom image
@@ -261,6 +263,24 @@ void CT_Viewer::handleDetail()
     detail_widget->setAttribute(Qt::WA_DeleteOnClose);
     detail_widget->setTableContent(this->ctImage->getMetaInfo());
     detail_widget->show();
+}
+
+void CT_Viewer::handleAxialScrollBarChange(int val)
+{
+    double* sliceCenter = this->ctImage->getSliceCenter();
+    this->ctImage->updateSliceCenter(sliceCenter[0], sliceCenter[1], val);
+}
+
+void CT_Viewer::handleCoronalScrollBarChange(int val)
+{
+    double* sliceCenter = this->ctImage->getSliceCenter();
+    this->ctImage->updateSliceCenter(sliceCenter[0], val, sliceCenter[2]);
+}
+
+void CT_Viewer::handleSagittalScrollBarChange(int val)
+{
+    double* sliceCenter = this->ctImage->getSliceCenter();
+    this->ctImage->updateSliceCenter(val, sliceCenter[1], sliceCenter[2]);
 }
 
 // control the zoom in and zoom out of the 3D view
@@ -386,14 +406,9 @@ void CT_Viewer::handleSetContrast()
     if (!this->CT_uploaded) {
         return;
     }
-    CT_Contrast_Widget* contrast_widget = new CT_Contrast_Widget(this->ctImage->getCTImageAccumulate(), this);
+    CT_Contrast_Widget* contrast_widget = new CT_Contrast_Widget(this->ctImage, this);
     contrast_widget->setAttribute(Qt::WA_DeleteOnClose);
     contrast_widget->show();
-    // connect contrast change signal with ct_2d_widgets
-    // qt will auto disconnect signals when the object is deleted
-    connect(contrast_widget, &CT_Contrast_Widget::contrastAdjusted, this->ui.sagittalViewWidget, &CT_2d_Widget::updateColorMap);
-    connect(contrast_widget, &CT_Contrast_Widget::contrastAdjusted, this->ui.coronalViewWidget, &CT_2d_Widget::updateColorMap);
-    connect(contrast_widget, &CT_Contrast_Widget::contrastAdjusted, this->ui.axialViewWidget, &CT_2d_Widget::updateColorMap);
 }
 
 // direction buttons and how screws will move when one direction button is clicked
@@ -450,5 +465,7 @@ void CT_Viewer::loadSliceAndThreshold(double* sliceCenter, int* contrastThreshol
     ui.axialViewWidget->updateColorMap(contrastThreshold[0], contrastThreshold[1]);
 
     // load slice center
-    // ...
+    ui.sagittalViewWidget->updateWhenSliceCenterChange(sliceCenter[0], sliceCenter[1], sliceCenter[2]);
+    ui.coronalViewWidget->updateWhenSliceCenterChange(sliceCenter[0], sliceCenter[1], sliceCenter[2]);
+    ui.axialViewWidget->updateWhenSliceCenterChange(sliceCenter[0], sliceCenter[1], sliceCenter[2]);
 }

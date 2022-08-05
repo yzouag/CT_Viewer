@@ -35,16 +35,31 @@ private slots:
     void handleConfirm();
     void handleClear();
     void handleDetail();
+
+    // three scroll bar slots
+    void handleAxialScrollBarChange(int val);
+    void handleCoronalScrollBarChange(int val);
+    void handleSagittalScrollBarChange(int val);
+
+    // four zoom in and zoom out button
     void handle3DView();
     void handleAxialView();
     void handleCoronalView();
     void handleSagittalView();
+
+    // screen shot for each window
     void handle3DScreenshot();
     void handleAxialScreenshot();
     void handleCoronalScreenshot();
     void handleSagittalScreenshot();
+
+    // 3D image camera reset
     void handle3DReset();
+
+    // set the contrast, color window
     void handleSetContrast();
+
+    // six direction button and the orientation slider bar
     void onScrewButtonClick();
     void onScrewSliderChange(double value);
 };
