@@ -10,6 +10,8 @@
 #include <vtkImageMapToColors.h>
 #include <QScrollBar>
 #include "ct_image.h"
+#include <vtkPlane.h>
+#include "planting_screws.h"
 
 namespace Ui {
     class CT_2d_Widget;
@@ -32,18 +34,22 @@ public:
     void setScrollBar(QScrollBar* scrollBar);
     vtkImageReslice* getReslice();
     ViewMode getViewMode();
+    void addScrew(PlantingScrews* screw);
+    void removeAll();
 
 public slots:
     void updateWhenSliceCenterChange(double x, double y, double z);
     void updateColorMap(int lower, int upper);
 
 private:
-    vtkGenericOpenGLRenderWindow* renWin;
-    vtkRenderer* ren;
+    vtkSmartPointer<vtkGenericOpenGLRenderWindow> renWin;
+    vtkSmartPointer<vtkRenderer> ren;
     ViewMode mode = ThreeDimension;
     CT_Image* ctImage;
-    vtkCursor2D* cursor;
+    vtkSmartPointer<vtkCursor2D> cursor;
     vtkImageMapToColors* mapToColor;
     QScrollBar* scrollBar;
+    vtkSmartPointer<vtkPlane> plane;
+    QVector<vtkSmartPointer<vtkActor>> screwContourList;
     void setWindowTitle();
 };

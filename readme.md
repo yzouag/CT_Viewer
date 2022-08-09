@@ -27,7 +27,7 @@ The idea of this project borrows from two popular applications in the medical vi
 6. 在3D图像中选点并在该位置插入钉子（进行）
 7. 优化图形界面，重构代码，文档 （进行）
 8. 设置初始页面（类似itk snap）（完成）
-9. undo redo 操作？要实现是否重写imageblend？
+9. undo redo 操作？要实现是否重写imageblend？(进行)
 10. 加入测量工具
 11. 设置不同灰度的显示(完成)
 12. 改善UI

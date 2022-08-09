@@ -28,8 +28,6 @@ public:
     void setRenderWindowSize(int height, int width);
     vtkGenericOpenGLRenderWindow* getRenderWindow();
     void setCTImage(vtkImageData* ctImage);
-    QVector<PlantingScrews*> getScrewList();
-    void confirmActors();
     void moveScrew(ScrewAction action, double value=0);
     void setActiveScrew(vtkBoxWidget* activeScrew);
     vtkBoxWidget* getActiveScrew();
@@ -40,8 +38,8 @@ public:
 
 public slots:
     void loadCT();
-    void addScrew(const char* screwName);
-    void removeAll();
+    void addScrew(PlantingScrews* screw);
+    void removeAll(QVector<PlantingScrews*> screwList);
 
 private:
     vtkBoxWidget* activeScrew = nullptr;
@@ -49,7 +47,6 @@ private:
     vtkRenderer* ren;
     vtkImageData* ctImage;
     vtkRenderWindowInteractor* interactor;
-    QVector<PlantingScrews*> screwList;
     vtkProperty* lastPickedProperty;
 };
 

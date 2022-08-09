@@ -37,7 +37,6 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
     connect(ui.actionOpen, SIGNAL(triggered()), this, SLOT(loadCT()));
     connect(ui.addButton, SIGNAL(clicked()), this, SLOT(handleAdd()));
     connect(ui.clearButton, SIGNAL(clicked()), this, SLOT(handleClear()));
-    connect(ui.confirmButton, SIGNAL(clicked()), this, SLOT(handleConfirm()));
     connect(ui.detailButton, SIGNAL(clicked()), this, SLOT(handleDetail()));
     connect(ui.actionSet_Contrast, SIGNAL(triggered()), this, SLOT(handleSetContrast()));
 
@@ -196,7 +195,14 @@ void CT_Viewer::handleAdd()
     if (!widget.confirmAction()) {
         return;
     }
-    ui.mainViewWidget->addScrew(widget.getSelectModel());
+    PlantingScrews* screw = new PlantingScrews(widget.getSelectModel());
+    screw->setMainViewWidget(this->ui.mainViewWidget);
+    screw->setSliceWidgets(this->ui.sagittalViewWidget, this->ui.coronalViewWidget, this->ui.axialViewWidget);
+    screwList.append(screw);
+    ui.mainViewWidget->addScrew(screw);
+    ui.sagittalViewWidget->addScrew(screw);
+    ui.coronalViewWidget->addScrew(screw);
+    ui.axialViewWidget->addScrew(screw);
 
     for (int i = 0; i < ui.gridLayout_2->count(); i++) {
         QWidget* widget = ui.gridLayout_2->itemAt(i)->widget();
@@ -212,44 +218,17 @@ void CT_Viewer::handleAdd()
     }
 }
 
-// merge the screw polygonal data with CT Image
-// reslice the Image and update scenes
-void CT_Viewer::handleConfirm()
-{
-    if (!this->CT_uploaded) {
-        return;
-    }
-    if (ui.mainViewWidget->getScrewList().size() < 1) {
-        QMessageBox msgBox;
-        msgBox.setText("No Screw Is Added!");
-        msgBox.exec();
-        return;
-    }
-    
-    // TODO: UNDO and REDO
-    this->ctImage->updateImage(ui.mainViewWidget->getScrewList());
-    ui.mainViewWidget->confirmActors();
-    ui.sagittalViewWidget->updateCTReslice(this->ctImage->getCTImageData());
-    ui.coronalViewWidget->updateCTReslice(this->ctImage->getCTImageData());
-    ui.axialViewWidget->updateCTReslice(this->ctImage->getCTImageData());
-
-    QMessageBox msgBox;
-    msgBox.setText("Screws Are Updated!");
-    msgBox.exec();
-}
-
 // remove all existing screws
 void CT_Viewer::handleClear()
 {
     if (!this->CT_uploaded) {
         return;
     }
-    if (ui.mainViewWidget->getScrewList().size() >= 1) {
-        ui.mainViewWidget->removeAll();
-        this->ctImage->resetImage();
-        ui.sagittalViewWidget->updateCTReslice(this->ctImage->getCTImageData());
-        ui.coronalViewWidget->updateCTReslice(this->ctImage->getCTImageData());
-        ui.axialViewWidget->updateCTReslice(this->ctImage->getCTImageData());
+    if (this->screwList.size() >= 1) {
+        ui.mainViewWidget->removeAll(this->screwList);
+        ui.sagittalViewWidget->removeAll();
+        ui.coronalViewWidget->removeAll();
+        ui.axialViewWidget->removeAll();
     }
     QMessageBox msgBox;
     msgBox.setText("Clear!");

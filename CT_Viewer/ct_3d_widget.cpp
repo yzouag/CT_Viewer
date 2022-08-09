@@ -19,6 +19,11 @@ VTK_MODULE_INIT(vtkRenderingFreeType);
 #include <vtkLegendScaleActor.h>
 #include <vtkCamera.h>
 #include <QDebug>
+#include <vtkActor.h>
+#include <vtkProp3D.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkTransformPolyDataFilter.h>
+#include "box_widget_callback.h"
 
 namespace {
     // this is a private class for progress update
@@ -40,51 +45,6 @@ namespace {
         }
     private:
         QProgressDialog* dialog;
-    };
-
-    // callback for vtk box widget, the actor will transform with the
-    //  outline widget together
-    class WidgetCallback : public vtkCommand
-    {
-    public:
-        static WidgetCallback* New()
-        {
-            return new WidgetCallback;
-        }
-        virtual void Execute(vtkObject* caller, unsigned long, void*)
-        {
-            vtkNew<vtkTransform> t;
-            vtkBoxWidget* widget = reinterpret_cast<vtkBoxWidget*>(caller);
-            widget->GetTransform(t);
-            widget->GetProp3D()->SetUserTransform(t);
-            
-            // if the current active widget is the same, return
-            if (this->qtWidget->getActiveScrew() == widget)
-                return;
-            
-            // first reset the property of last picked actor if this is not the first screw created
-            if (this->qtWidget->getActiveScrew() != nullptr) {
-                vtkActor* lastPickedActor = reinterpret_cast<vtkActor*>(this->qtWidget->getActiveScrew()->GetProp3D());
-                lastPickedActor->GetProperty()->DeepCopy(this->qtWidget->getLastPickedProperty());
-            }
-            this->qtWidget->setActiveScrew(widget);
-            // update the last picked actor to current actor
-            vtkActor* currentPickedActor = reinterpret_cast<vtkActor*>(widget->GetProp3D());
-            this->qtWidget->getLastPickedProperty()->DeepCopy(currentPickedActor->GetProperty());
-            
-            // highlight the current chosen actor
-            vtkNew<vtkNamedColors> colors;
-            currentPickedActor->GetProperty()->SetColor(colors->GetColor3d("cadmium_lemon").GetData());
-            currentPickedActor->GetProperty()->SetDiffuse(1.0);
-            currentPickedActor->GetProperty()->SetSpecular(0.0);
-        }
-        void setQTWidget(CT_3d_Widget* qtWidget)
-        {
-            this->qtWidget = qtWidget;
-        }
-
-    private:
-        CT_3d_Widget* qtWidget;
     };
 }
 
@@ -182,18 +142,6 @@ void CT_3d_Widget::setCTImage(vtkImageData * ctImage)
     this->ctImage = ctImage;
 }
 
-QVector<PlantingScrews*> CT_3d_Widget::getScrewList()
-{
-    return this->screwList;
-}
-
-void CT_3d_Widget::confirmActors()
-{
-    for (auto screw : this->screwList) {
-        screw->getScrewWidget()->EnabledOff();
-    }
-}
-
 void CT_3d_Widget::moveScrew(ScrewAction action, double value)
 {
     if (this->activeScrew == nullptr) {
@@ -268,27 +216,21 @@ void CT_3d_Widget::getCameraSettings(double * position, double * focalPoint)
     focalPoint[2] = this->ren->GetActiveCamera()->GetFocalPoint()[2];
 }
 
-void CT_3d_Widget::addScrew(const char * screwName)
+void CT_3d_Widget::addScrew(PlantingScrews* screw)
 {
-    // create a screw according to its type name
-    PlantingScrews* screw = new PlantingScrews(screwName);
-    
     // set the box widget interactor and start the box widget
-    vtkNew<WidgetCallback> callback;
-    callback->setQTWidget(this);
+    vtkNew<BoxWidgetCallback> callback;
+    callback->setScrew(screw);
     screw->getScrewWidget()->AddObserver(vtkCommand::InteractionEvent, callback);
     screw->getScrewWidget()->SetInteractor(this->interactor);
     screw->getScrewWidget()->On();
     this->ren->AddActor(screw->getScrewActor());
     this->renWin->Render();
-
-    // keep the pointer to the list, the newly added screw is active
-    this->screwList.push_back(screw);
 }
 
-void CT_3d_Widget::removeAll() // this method is suspicious of memory leak!!!
+void CT_3d_Widget::removeAll(QVector<PlantingScrews*> screwList) // this method is suspicious of memory leak!!!
 {
-    for (auto screw : this->screwList) {
+    for (auto screw : screwList) {
         screw->getScrewWidget()->SetEnabled(0);
         this->ren->RemoveActor(screw->getScrewActor());
         delete screw;

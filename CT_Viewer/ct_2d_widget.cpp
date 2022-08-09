@@ -16,6 +16,10 @@ VTK_MODULE_INIT(vtkRenderingFreeType);
 #include <vtkGenericOpenGLRenderWindow.h>
 #include "reslice_interaction_callback.h"
 #include <QDebug>
+#include <vtkCutter.h>
+#include <vtkStripper.h>
+#include <vtkContourTriangulator.h>
+#include <vtkTransform.h>
 
 CT_2d_Widget::CT_2d_Widget(QWidget *parent = Q_NULLPTR)
 {
@@ -40,6 +44,20 @@ void CT_2d_Widget::setViewMode(ViewMode mode)
 {
     this->mode = mode;
     setWindowTitle();
+    // also we need to set the normal of the plane
+    vtkNew<vtkPlane> plane;
+    switch (mode) {
+    case Sagittal:
+        plane->SetNormal(1, 0, 0);
+        break;
+    case Coronal:
+        plane->SetNormal(0, 1, 0);
+        break;
+    case Axial:
+        plane->SetNormal(0, 0, 1);
+        break;
+    }
+    this->plane = plane;
 }
 
 void CT_2d_Widget::renderCTReslice(CT_Image * ctImage)
@@ -147,6 +165,64 @@ ViewMode CT_2d_Widget::getViewMode()
     return this->mode;
 }
 
+void CT_2d_Widget::addScrew(PlantingScrews* screw)
+{
+    double* sliceCenter = this->ctImage->getSliceCenter();
+    // set the plane's position as same as reslice axes origin
+    this->plane->SetOrigin(sliceCenter);
+    
+    // init the cutter and set the cut function to the plane
+    vtkNew<vtkCutter> cutter;
+    cutter->SetCutFunction(this->plane);
+    cutter->SetInputData(screw->getScrewSource());
+    vtkNew<vtkStripper> stripper;
+    stripper->SetInputConnection(cutter->GetOutputPort());
+
+    // this contour triangulate filter will fill the contour
+    vtkNew<vtkContourTriangulator> solidCut;
+    solidCut->SetInputConnection(stripper->GetOutputPort());
+    vtkNew<vtkPolyDataMapper> coneContourMapper;
+    coneContourMapper->SetInputConnection(solidCut->GetOutputPort());
+    
+    // create the actor
+    vtkNew<vtkActor> screwContour;
+    screwContour->GetProperty()->SetColor(255, 0, 0);
+    screwContour->SetMapper(coneContourMapper);
+    // to put the cone contour to the same position as the reslice image
+    vtkNew<vtkTransform> t;
+    switch (this->mode) {
+    case Sagittal:
+        screwContour->SetPosition(-sliceCenter[0] - 1, -sliceCenter[1], -sliceCenter[2]);
+        t->RotateY(90);
+        screwContour->SetUserTransform(t);
+        break;
+    case Coronal:
+        screwContour->SetPosition(-sliceCenter[0], -sliceCenter[1] + 1, -sliceCenter[2]);
+        t->RotateX(90);
+        screwContour->SetUserTransform(t);
+        break;
+    case Axial:
+        screwContour->SetPosition(-sliceCenter[0], -sliceCenter[1], -sliceCenter[2] + 1);
+        break;
+    }
+    screwContour->GetProperty()->SetColor(255, 0, 0);
+    
+    // add the contour to the 2D view render
+    this->ren->AddActor(screwContour);
+    this->screwContourList.append(screwContour);
+    this->ren->ResetCamera();
+    this->renWin->Render();
+}
+
+void CT_2d_Widget::removeAll()
+{
+    for (auto actor : this->screwContourList) {
+        this->ren->RemoveActor(actor);
+    }
+    this->renWin->Render();
+    screwContourList.clear();
+}
+
 // must be done after set view mode
 void CT_2d_Widget::setWindowTitle()
 {
@@ -168,18 +244,39 @@ void CT_2d_Widget::updateWhenSliceCenterChange(double x, double y, double z)
         cursor_pos_x = this->ctImage->getModelCenter()[1] - y;
         cursor_pos_y = this->ctImage->getModelCenter()[2] - z;
         this->scrollBar->setValue(x);
+        if (this->screwContourList.size() > 0) {
+            this->plane->SetOrigin(this->ctImage->getModelCenter()[0] * 2 - x, this->ctImage->getModelCenter()[1], this->ctImage->getModelCenter()[2]);
+            this->plane->Modified();
+            for (auto actor : this->screwContourList) {
+                    actor->SetPosition(x - this->ctImage->getModelCenter()[0] * 2 - 1, -this->ctImage->getModelCenter()[1], -this->ctImage->getModelCenter()[2]);
+            }
+        }
         break;
     case Coronal:
         this->ctImage->getCTImageReslice(this->mode)->SetResliceAxesOrigin(this->ctImage->getModelCenter()[0], y, this->ctImage->getModelCenter()[2]);
         cursor_pos_x = this->ctImage->getModelCenter()[0] - x;
         cursor_pos_y = this->ctImage->getModelCenter()[2] - z;
         this->scrollBar->setValue(y);
+        if (this->screwContourList.size() > 0) {
+            this->plane->SetOrigin(this->ctImage->getModelCenter()[0], y, this->ctImage->getModelCenter()[2]);
+            this->plane->Modified();
+            for (auto actor : this->screwContourList) {
+                actor->SetPosition(-this->ctImage->getModelCenter()[0], -y+1, -this->ctImage->getModelCenter()[2]);
+            }
+        }
         break;
     case Axial:
         this->ctImage->getCTImageReslice(this->mode)->SetResliceAxesOrigin(this->ctImage->getModelCenter()[0], this->ctImage->getModelCenter()[1], z);
         cursor_pos_x = this->ctImage->getModelCenter()[0] - x;
         cursor_pos_y = y - this->ctImage->getModelCenter()[1];
         this->scrollBar->setValue(z);
+        if (this->screwContourList.size() > 0) {
+            this->plane->SetOrigin(this->ctImage->getModelCenter()[0], this->ctImage->getModelCenter()[1], z);
+            this->plane->Modified();
+            for (auto actor : this->screwContourList) {
+                actor->SetPosition(-this->ctImage->getModelCenter()[0], -this->ctImage->getModelCenter()[1], -z+1);
+            }
+        }
         break;
     }
     // unblock the scroll bar for incoming scroll movements
@@ -191,6 +288,7 @@ void CT_2d_Widget::updateWhenSliceCenterChange(double x, double y, double z)
     this->ctImage->getCTImageReslice(this->mode)->Modified();
 
     // render the scene again to show the result
+    this->ren->ResetCamera();
     this->renWin->Render();
 }
 

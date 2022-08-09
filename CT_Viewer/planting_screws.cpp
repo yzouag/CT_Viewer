@@ -35,9 +35,36 @@ vtkSmartPointer<vtkActor> PlantingScrews::getScrewActor()
     return this->screwActor;
 }
 
+vtkSmartPointer<vtkPolyData> PlantingScrews::getScrewSource()
+{
+    return this->screwSource;
+}
+
 const char * PlantingScrews::getScrewName()
 {
     return this->screwName;
+}
+
+void PlantingScrews::setMainViewWidget(CT_3d_Widget * mainViewWidget)
+{
+    this->mainViewWidget = mainViewWidget;
+}
+
+CT_3d_Widget * PlantingScrews::getMainViewWidget()
+{
+    return this->mainViewWidget;
+}
+
+void PlantingScrews::setSliceWidgets(CT_2d_Widget* sagittalViewWidget, CT_2d_Widget* coronalViewWidget, CT_2d_Widget* axialViewWidget)
+{
+    this->sliceWidget[0] = sagittalViewWidget;
+    this->sliceWidget[1] = coronalViewWidget;
+    this->sliceWidget[2] = axialViewWidget;
+}
+
+CT_2d_Widget ** PlantingScrews::getSliceWidget()
+{
+    return this->sliceWidget;
 }
 
 // add cone actor which can change shape and size    
@@ -51,6 +78,8 @@ void PlantingScrews::addCone()
     cone->SetRadius(10.0);
     cone->SetResolution(100);
     cone->SetDirection(0, -1, 0);
+    cone->Update();
+    this->screwSource = cone->GetOutput();
 
     // add source to mapper and then create actor
     vtkNew<vtkPolyDataMapper> coneMapper;
@@ -75,6 +104,8 @@ void PlantingScrews::addCustomScrew(const char * screwName)
     screwPath.append(screwName);
     screwPath.append(".vtk");
     reader->SetFileName(screwPath.c_str());
+    reader->Update();
+    this->screwSource = reader->GetOutput();
     vtkNew<vtkPolyDataMapper> mapper;
     mapper->SetInputConnection(reader->GetOutputPort());
     vtkNew<vtkActor> actor;

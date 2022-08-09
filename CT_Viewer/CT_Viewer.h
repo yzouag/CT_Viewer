@@ -11,6 +11,7 @@
 #include <vtkActor.h>
 #include <QMap>
 #include <QString>
+#include <QVector>
 #include "ct_image.h"
 
 class CT_Viewer : public QMainWindow
@@ -28,12 +29,12 @@ private:
     bool CT_uploaded = false; // CT_uploaded allows other buttons to function
     Ui::CT_ViewerClass ui;
     CT_Image* ctImage;
+    QVector<PlantingScrews*> screwList;
     void takeScreenshot(QWidget* widget);
 
 private slots:
     void loadCT();
     void handleAdd();
-    void handleConfirm();
     void handleClear();
     void handleDetail();
 

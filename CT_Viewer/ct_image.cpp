@@ -118,7 +118,7 @@ vtkSmartPointer<vtkImageReslice> CT_Image::getCTImageReslice(int axis)
 vtkSmartPointer<vtkImageAccumulate> CT_Image::getCTImageAccumulate()
 {
     int n_bins = 50;
-    int min_val = -3100; // TODO: how to get this two number?
+    int min_val = -3100; // TODO: how to get this two number? use itk will be easier, so we need to re-implement our loading
     int max_val = 3100;
 
     vtkNew<vtkImageAccumulate> imageAccumulate;
