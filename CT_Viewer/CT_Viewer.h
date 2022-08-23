@@ -38,6 +38,10 @@ private slots:
     void handleClear();
     void handleDetail();
 
+    void updateViews();
+    void updateColors(vtkBoxWidget* widget, double r, double g, double b);
+    void removeListItem(QWidget* widget, QListWidgetItem* item);
+
     // three scroll bar slots
     void handleAxialScrollBarChange(int val);
     void handleCoronalScrollBarChange(int val);

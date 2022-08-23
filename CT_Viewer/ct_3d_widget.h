@@ -27,7 +27,7 @@ public:
     ~CT_3d_Widget();
     void setRenderWindowSize(int height, int width);
     vtkGenericOpenGLRenderWindow* getRenderWindow();
-    void setCTImage(vtkImageData* ctImage);
+    vtkSmartPointer<vtkProp> setCTImage(vtkImageData* ctImage);
     void moveScrew(ScrewAction action, double value=0);
     void setActiveScrew(vtkBoxWidget* activeScrew);
     vtkBoxWidget* getActiveScrew();
@@ -37,7 +37,6 @@ public:
     void getCameraSettings(double* position, double* focalPoint);
 
 public slots:
-    void loadCT();
     void addScrew(PlantingScrews* screw);
     void removeAll(QVector<PlantingScrews*> screwList);
 
@@ -48,5 +47,6 @@ private:
     vtkImageData* ctImage;
     vtkRenderWindowInteractor* interactor;
     vtkProperty* lastPickedProperty;
+    double lastAngle = 0;
 };
 

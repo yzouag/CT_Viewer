@@ -12,14 +12,22 @@
 #include "image_register.h"
 #include <vtkCamera.h>
 #include <vtkRendererCollection.h>
+#include "actor_list_item.h"
+#include <QListWidgetItem>
+#include <vtkProp.h>
 
 CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
 {
     ui.setupUi(this);
+
+    // set the view direction for each 2D widget
+    // show the caption for each 2D View
     ui.sagittalViewWidget->setViewMode(Sagittal);
     ui.axialViewWidget->setViewMode(Axial);
     ui.coronalViewWidget->setViewMode(Coronal);
 
+    // hide direction and other screw manipulation buttons
+    // they will be recovered after first screw is added
     for (int i = 0; i < ui.gridLayout_2->count(); i++) {
         QWidget* widget = ui.gridLayout_2->itemAt(i)->widget();
         if (widget != nullptr) {
@@ -92,14 +100,25 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
 
     displayMetaInfo(ui, this->ctImage->getMetaInfo());
 
+    QList<vtkProp*> actorList;
     // create 3D volume and add to window
-    ui.mainViewWidget->setCTImage(this->ctImage->getCTImageData());
-    ui.mainViewWidget->loadCT();
+    actorList.append(ui.mainViewWidget->setCTImage(this->ctImage->getCTImageData()));
 
     // create 2D view for each slice
-    ui.sagittalViewWidget->renderCTReslice(this->ctImage);
-    ui.coronalViewWidget->renderCTReslice(this->ctImage);
-    ui.axialViewWidget->renderCTReslice(this->ctImage);
+    actorList.append(ui.sagittalViewWidget->renderCTReslice(this->ctImage));
+    actorList.append(ui.coronalViewWidget->renderCTReslice(this->ctImage));
+    actorList.append(ui.axialViewWidget->renderCTReslice(this->ctImage));
+    
+    // add the CT Model to the List View
+    QListWidgetItem *item = new QListWidgetItem;
+    ActorListItem* boneModelItem = new ActorListItem(DICOM_IMAGE, this->ctImage->getMetaInfo()["Patient Name"], item);
+    boneModelItem->setCorrespondingActors(actorList);
+    item->setSizeHint(QSize(210,24));
+    item->setFlags(Qt::NoItemFlags);
+    ui.listWidget->addItem(item);
+    ui.listWidget->setItemWidget(item, boneModelItem);
+    connect(boneModelItem, &ActorListItem::actorChanged, this, &CT_Viewer::updateViews);
+    connect(boneModelItem, &ActorListItem::widgetDeleted, this, &CT_Viewer::removeListItem);
 
     // also set the range of the scroll bar
     ui.sagittalViewWidget->setScrollBar(this->ui.sagittalScrollBar);
@@ -142,7 +161,6 @@ void CT_Viewer::takeScreenshot(QWidget* widget)
 }
 
 // trigger when click open, open another image and reload the CT_Image
-// TODO: bugs when load another picture
 void CT_Viewer::loadCT()
 {
     // load file directory
@@ -165,7 +183,6 @@ void CT_Viewer::loadCT()
 
     // create 3D volume and add to window
     ui.mainViewWidget->setCTImage(this->ctImage->getCTImageData());
-    ui.mainViewWidget->loadCT();
 
     // create 2D view for each slice
     ui.sagittalViewWidget->renderCTReslice(this->ctImage);
@@ -199,11 +216,32 @@ void CT_Viewer::handleAdd()
     screw->setMainViewWidget(this->ui.mainViewWidget);
     screw->setSliceWidgets(this->ui.sagittalViewWidget, this->ui.coronalViewWidget, this->ui.axialViewWidget);
     screwList.append(screw);
+    
+    QList<vtkProp*> actorList;
     ui.mainViewWidget->addScrew(screw);
-    ui.sagittalViewWidget->addScrew(screw);
-    ui.coronalViewWidget->addScrew(screw);
-    ui.axialViewWidget->addScrew(screw);
+    actorList.append(ui.sagittalViewWidget->addScrew(screw));
+    actorList.append(ui.coronalViewWidget->addScrew(screw));
+    actorList.append(ui.axialViewWidget->addScrew(screw));
 
+    actorList.append(screw->getScrewActor());
+    QListWidgetItem *item = new QListWidgetItem;
+    ActorListItem* screwModelItem;
+    if (strncmp("cone", screw->getScrewName(), 5) == 0) {
+        screwModelItem = new ActorListItem(CONE, "cone", item);
+    }
+    else {
+        screwModelItem = new ActorListItem(SCREW, screw->getScrewName(), item);
+    }
+    screwModelItem->setCorrespondingBoxWidget(screw->getScrewWidget());
+    screwModelItem->setCorrespondingActors(actorList);
+    item->setSizeHint(QSize(210, 24));
+    item->setFlags(Qt::NoItemFlags);
+    ui.listWidget->addItem(item);
+    ui.listWidget->setItemWidget(item, screwModelItem);
+    connect(screwModelItem, &ActorListItem::colorChanged, this, &CT_Viewer::updateColors);
+    connect(screwModelItem, &ActorListItem::widgetDeleted, this, &CT_Viewer::removeListItem);
+
+    // display the direction and other buttons for manipulating the screws
     for (int i = 0; i < ui.gridLayout_2->count(); i++) {
         QWidget* widget = ui.gridLayout_2->itemAt(i)->widget();
         if (widget != nullptr) {
@@ -245,6 +283,29 @@ void CT_Viewer::handleDetail()
     detail_widget->setAttribute(Qt::WA_DeleteOnClose);
     detail_widget->setTableContent(this->ctImage->getMetaInfo());
     detail_widget->show();
+}
+
+void CT_Viewer::updateViews()
+{
+    ui.mainViewWidget->GetRenderWindow()->Render();
+    ui.sagittalViewWidget->GetRenderWindow()->Render();
+    ui.coronalViewWidget->GetRenderWindow()->Render();
+    ui.axialViewWidget->GetRenderWindow()->Render();
+}
+
+void CT_Viewer::updateColors(vtkBoxWidget* widget, double r, double g, double b)
+{
+    if (widget == ui.mainViewWidget->getActiveScrew()) {
+        ui.mainViewWidget->getLastPickedProperty()->SetColor(r, g, b);
+    }
+    updateViews();
+}
+
+void CT_Viewer::removeListItem(QWidget* widget, QListWidgetItem* item)
+{
+    updateViews();
+    delete widget;
+    delete item;
 }
 
 void CT_Viewer::handleAxialScrollBarChange(int val)

@@ -12,6 +12,7 @@
 #include "ct_image.h"
 #include <vtkPlane.h>
 #include "planting_screws.h"
+#include <vtkProp.h>
 
 namespace Ui {
     class CT_2d_Widget;
@@ -29,12 +30,12 @@ public:
     CT_2d_Widget(QWidget *parent);
     ~CT_2d_Widget();
     void setViewMode(ViewMode mode);
-    void renderCTReslice(CT_Image* ctImage);
+    vtkSmartPointer<vtkProp> renderCTReslice(CT_Image* ctImage);
     void updateCTReslice(vtkImageData* ctImage);
     void setScrollBar(QScrollBar* scrollBar);
     vtkImageReslice* getReslice();
     ViewMode getViewMode();
-    void addScrew(PlantingScrews* screw);
+    vtkProp* addScrew(PlantingScrews* screw);
     void removeAll();
 
 public slots:

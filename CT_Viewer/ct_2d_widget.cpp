@@ -60,7 +60,7 @@ void CT_2d_Widget::setViewMode(ViewMode mode)
     this->plane = plane;
 }
 
-void CT_2d_Widget::renderCTReslice(CT_Image * ctImage)
+vtkSmartPointer<vtkProp> CT_2d_Widget::renderCTReslice(CT_Image * ctImage)
 {
     this->ctImage = ctImage;
 
@@ -130,6 +130,7 @@ void CT_2d_Widget::renderCTReslice(CT_Image * ctImage)
     
     // generate the scene
     this->renWin->Render();
+    return imageActor;
 }
 
 void CT_2d_Widget::updateCTReslice(vtkImageData* ctImage)
@@ -165,7 +166,7 @@ ViewMode CT_2d_Widget::getViewMode()
     return this->mode;
 }
 
-void CT_2d_Widget::addScrew(PlantingScrews* screw)
+vtkProp* CT_2d_Widget::addScrew(PlantingScrews* screw)
 {
     double* sliceCenter = this->ctImage->getSliceCenter();
     // set the plane's position as same as reslice axes origin
@@ -212,6 +213,8 @@ void CT_2d_Widget::addScrew(PlantingScrews* screw)
     this->screwContourList.append(screwContour);
     this->ren->ResetCamera();
     this->renWin->Render();
+
+    return screwContour;
 }
 
 void CT_2d_Widget::removeAll()

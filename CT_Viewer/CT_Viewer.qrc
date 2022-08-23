@@ -6,5 +6,13 @@
         <file>resources/dl_fourviews.png</file>
         <file>resources/dl_sagittal.png</file>
         <file>resources/icons8_slr_camera_16.png</file>
+        <file>resources/hide.png</file>
+        <file>resources/screw.png</file>
+        <file>resources/see.png</file>
+        <file>resources/delete.png</file>
+        <file>resources/bone.png</file>
+        <file>resources/cone.png</file>
+        <file>resources/measure_angle.png</file>
+        <file>resources/measure_length.png</file>
     </qresource>
 </RCC>

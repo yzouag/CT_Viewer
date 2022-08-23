@@ -75,8 +75,20 @@ CT_3d_Widget::~CT_3d_Widget()
     this->lastPickedProperty->Delete();
 }
 
-void CT_3d_Widget::loadCT()
+void CT_3d_Widget::setRenderWindowSize(int height, int width)
 {
+    this->renWin->SetSize(height, width);
+}
+
+vtkGenericOpenGLRenderWindow * CT_3d_Widget::getRenderWindow()
+{
+    return this->renWin;
+}
+
+vtkSmartPointer<vtkProp> CT_3d_Widget::setCTImage(vtkImageData* ctImage)
+{
+    this->ctImage = ctImage;
+    
     // create mapper, filters to render Dicom data
     vtkNew<vtkPiecewiseFunction> opacityTransfunc;
     opacityTransfunc->AddPoint(70, 0.0);
@@ -125,21 +137,8 @@ void CT_3d_Widget::loadCT()
     interactor->Initialize();
     this->interactor = interactor;
     this->renWin->Render();
-}
 
-void CT_3d_Widget::setRenderWindowSize(int height, int width)
-{
-    this->renWin->SetSize(height, width);
-}
-
-vtkGenericOpenGLRenderWindow * CT_3d_Widget::getRenderWindow()
-{
-    return this->renWin;
-}
-
-void CT_3d_Widget::setCTImage(vtkImageData * ctImage)
-{
-    this->ctImage = ctImage;
+    return ctVolume;
 }
 
 void CT_3d_Widget::moveScrew(ScrewAction action, double value)
@@ -169,10 +168,12 @@ void CT_3d_Widget::moveScrew(ScrewAction action, double value)
         t->Translate(0, 0, -1);
         break;
     case ROTATE_IS:
-        t->RotateX(value - t->GetOrientation()[0]);
+        t->RotateX(value - lastAngle);
+        this->lastAngle = value;
         break;
     case ROTATE_LR:
-        t->RotateZ(value - t->GetOrientation()[2]);
+        t->RotateZ(value - lastAngle);
+        this->lastAngle = value;
         break;
     }
     this->activeScrew->SetTransform(t);
@@ -183,6 +184,7 @@ void CT_3d_Widget::moveScrew(ScrewAction action, double value)
 void CT_3d_Widget::setActiveScrew(vtkBoxWidget * activeScrew)
 {
     this->activeScrew = activeScrew;
+    this->lastAngle = 0;
 }
 
 vtkBoxWidget * CT_3d_Widget::getActiveScrew()

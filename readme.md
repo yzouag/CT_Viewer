@@ -15,7 +15,7 @@ A simple application made from C++, QT, VTK to read in and view the CT images, p
 
 ## Ackknowlegement
 
-The idea of this project borrows from two popular applications in the medical view, [ITK-SNAP](http://www.itksnap.org/pmwiki/pmwiki.php) and [3D Slicer](https://www.slicer.org/). The CT_Viewer is just a toy project with minimal functionalities. I am still learning about software engineering and data visualization. Thanks for the great community of VTK to guide me overcoming all the difficulties in writing this project.
+The idea of this project are learnt from two popular applications for visualizing and interacting with medical images, [ITK-SNAP](http://www.itksnap.org/pmwiki/pmwiki.php) and [3D Slicer](https://www.slicer.org/). I also borrow the inspirations from [Pedicle Screw Simulator](https://github.com/lassoan/PedicleScrewSimulator), which is an extension of 3D Slicer. The CT_Viewer is just a toy project with minimal functionalities. I am still learning about software engineering and data visualization. Thanks for the great community of VTK to guide me overcoming all the difficulties in writing this project.
 
 ## TODO
 
@@ -27,7 +27,7 @@ The idea of this project borrows from two popular applications in the medical vi
 6. 在3D图像中选点并在该位置插入钉子（进行）
 7. 优化图形界面，重构代码，文档 （进行）
 8. 设置初始页面（类似itk snap）（完成）
-9. undo redo 操作？要实现是否重写imageblend？(进行)
+9. undo redo 操作？要实现是否重写imageblend？(进行, imageBlend已经重写)
 10. 加入测量工具
 11. 设置不同灰度的显示(完成)
 12. 改善UI
