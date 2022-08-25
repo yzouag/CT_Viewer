@@ -8,7 +8,7 @@
 #include <vtkProp.h>
 #include <vtkBoxWidget.h>
 
-// TODO: rename the object
+// TODO: rename the actors
 
 enum ActorType
 {

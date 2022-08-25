@@ -24,10 +24,10 @@ public:
     QMap<QString, QString> getMetaInfo();
     bool checkLoadSuccess();
     void updateImage(QVector<PlantingScrews*> screwList);
-    void resetImage();
     QString getFilePath();
     double* getModelCenter();
     double* getSliceCenter();
+    double* getModelBounds();
     int* getContrastThreshold();
 
 public slots:
@@ -42,27 +42,25 @@ private:
     double const VIEWDIRECTIONMATRIX[3][16] = {
         {0, 0,-1, 0,
         -1, 0, 0, 0,
-        0,-1, 0, 0,
+        0, 1, 0, 0,
         0, 0, 0, 1},
 
-        {1, 0, 0, 0,
+        {-1, 0, 0, 0,
         0, 0, 1, 0,
-        0, -1,0, 0,
+        0, 1, 0, 0,
         0, 0, 0, 1},
 
-        {1, 0, 0, 0,
+        {-1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
         0, 0, 0, 1}
     };
 
-    void loadMetaInfo(QProgressDialog* dialog);
     void createReslices(int axis);
     void createMetaInfo(itk::SmartPointer<itk::GDCMImageIO> dicomIO);
 
     vtkSmartPointer<vtkImageAccumulate> ctImageAccumulate;
     vtkSmartPointer<vtkImageData> ctImage;
-    vtkSmartPointer<vtkImageData> originImage;
     vtkSmartPointer<vtkImageReslice> ctReslices[3];
     QMap<QString, QString> metaInfo;
     bool load_succeed;
@@ -70,5 +68,6 @@ private:
 
     double sliceCenter[3];
     double modelCenter[3];
+    double modelBounds[6];
     int contrastThreshold[2] = {-1000, 1000};
 };

@@ -19,7 +19,7 @@ The idea of this project are learnt from two popular applications for visualizin
 
 ## TODO
 
-1. 使用ITK读取和导出文件（导出没做,导入也是假的）
+1. 使用ITK读取和导出文件（进行）
 2. 获取宏信息并显示（完成)
 3. 导入源改为钉子，或者提供更多选项(如何确定钉子的大小和现实一样？)（完成）
 4. 在多个视图定位光标位置（完成）
@@ -27,13 +27,14 @@ The idea of this project are learnt from two popular applications for visualizin
 6. 在3D图像中选点并在该位置插入钉子（进行）
 7. 优化图形界面，重构代码，文档 （进行）
 8. 设置初始页面（类似itk snap）（完成）
-9. undo redo 操作？要实现是否重写imageblend？(进行, imageBlend已经重写)
-10. 加入测量工具
+9. 实现重写imageblend(完成)
+10. 加入测量工具（进行）
 11. 设置不同灰度的显示(完成)
-12. 改善UI
+12. 改善UI（进行）
 13. details改为table(完成)
 14. 打开一个workspace
 15. 加入模型的切除，或者截取一部分
+16. Undo Redo 功能
 
 ## Bugs:
 

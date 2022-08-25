@@ -91,11 +91,13 @@ vtkSmartPointer<vtkProp> CT_2d_Widget::renderCTReslice(CT_Image * ctImage)
     cursor->SetFocalPoint(0, 0, 0);
     cursor->Update();
     this->cursor = cursor;
+    cursor->GetModelBounds(this->cursorBounds);
 
     vtkNew<vtkPolyDataMapper> cursorMapper;
     cursorMapper->SetInputConnection(cursor->GetOutputPort());
     vtkNew<vtkActor> cursorActor;
     cursorActor->GetProperty()->SetColor(200, 50, 0);
+    cursorActor->GetProperty()->SetLineWidth(2.0);
     cursorActor->SetMapper(cursorMapper);
     
     // put the cursor above the image
@@ -118,7 +120,6 @@ vtkSmartPointer<vtkProp> CT_2d_Widget::renderCTReslice(CT_Image * ctImage)
     callback->setImageReslice(this);
     callback->setInteractor(interactor);
     callback->setCursor(cursor);
-    callback->setInteractor(interactor);
     callback->setRender(this->ren);
     callback->setCTImage(this->ctImage);
 
@@ -144,8 +145,9 @@ void CT_2d_Widget::updateCTReslice(vtkImageData* ctImage)
 void CT_2d_Widget::setScrollBar(QScrollBar * scrollBar)
 {
     this->scrollBar = scrollBar;
-    scrollBar->setMinimum(0);
-    scrollBar->setMaximum(this->ctImage->getModelCenter()[mode] * 2); // WARNING: not sure about the boundary, should we -1?
+    double* bounds = this->ctImage->getModelBounds();
+    scrollBar->setMinimum(bounds[mode * 2]);
+    scrollBar->setMaximum(bounds[mode * 2 + 1]);
     
     // block the signal when we set value without user interactions
     // this will avoid the signal emitting and other two views being affected
@@ -195,15 +197,18 @@ vtkProp* CT_2d_Widget::addScrew(PlantingScrews* screw)
     case Sagittal:
         screwContour->SetPosition(-sliceCenter[0] - 1, -sliceCenter[1], -sliceCenter[2]);
         t->RotateY(90);
+        t->RotateX(-90);
         screwContour->SetUserTransform(t);
         break;
     case Coronal:
         screwContour->SetPosition(-sliceCenter[0], -sliceCenter[1] + 1, -sliceCenter[2]);
         t->RotateX(90);
+        t->RotateY(180);
         screwContour->SetUserTransform(t);
         break;
     case Axial:
         screwContour->SetPosition(-sliceCenter[0], -sliceCenter[1], -sliceCenter[2] + 1);
+        screwContour->SetScale(-1, 1, 1);
         break;
     }
     screwContour->GetProperty()->SetColor(255, 0, 0);
@@ -242,23 +247,24 @@ void CT_2d_Widget::updateWhenSliceCenterChange(double x, double y, double z)
     this->scrollBar->blockSignals(true);
     switch (this->mode) {
     case Sagittal:
-        // a lot of corner cases for these interactions, don't know why
-        this->ctImage->getCTImageReslice(this->mode)->SetResliceAxesOrigin(this->ctImage->getModelCenter()[0] * 2 - x, this->ctImage->getModelCenter()[1], this->ctImage->getModelCenter()[2]);
-        cursor_pos_x = this->ctImage->getModelCenter()[1] - y;
-        cursor_pos_y = this->ctImage->getModelCenter()[2] - z;
         this->scrollBar->setValue(x);
+        x = this->ctImage->getModelBounds()[1] - x + this->ctImage->getModelBounds()[0];
+        this->ctImage->getCTImageReslice(this->mode)->SetResliceAxesOrigin(x, this->ctImage->getModelCenter()[1], this->ctImage->getModelCenter()[2]);
+        // sagittal view is different, need special care, leftmost cursor maps to rightmost model
+        cursor_pos_x = this->cursorBounds[1] + this->ctImage->getModelBounds()[2] - y;
+        cursor_pos_y = this->cursorBounds[3] - this->ctImage->getModelBounds()[5] + z;
         if (this->screwContourList.size() > 0) {
-            this->plane->SetOrigin(this->ctImage->getModelCenter()[0] * 2 - x, this->ctImage->getModelCenter()[1], this->ctImage->getModelCenter()[2]);
+            this->plane->SetOrigin(x, this->ctImage->getModelCenter()[1], this->ctImage->getModelCenter()[2]);
             this->plane->Modified();
             for (auto actor : this->screwContourList) {
-                    actor->SetPosition(x - this->ctImage->getModelCenter()[0] * 2 - 1, -this->ctImage->getModelCenter()[1], -this->ctImage->getModelCenter()[2]);
+                    actor->SetPosition(-x - 1, -this->ctImage->getModelCenter()[1], -this->ctImage->getModelCenter()[2]);
             }
         }
         break;
     case Coronal:
         this->ctImage->getCTImageReslice(this->mode)->SetResliceAxesOrigin(this->ctImage->getModelCenter()[0], y, this->ctImage->getModelCenter()[2]);
-        cursor_pos_x = this->ctImage->getModelCenter()[0] - x;
-        cursor_pos_y = this->ctImage->getModelCenter()[2] - z;
+        cursor_pos_x = this->cursorBounds[1] - this->ctImage->getModelBounds()[1] + x;
+        cursor_pos_y = this->cursorBounds[3] - this->ctImage->getModelBounds()[5] + z;
         this->scrollBar->setValue(y);
         if (this->screwContourList.size() > 0) {
             this->plane->SetOrigin(this->ctImage->getModelCenter()[0], y, this->ctImage->getModelCenter()[2]);
@@ -270,8 +276,8 @@ void CT_2d_Widget::updateWhenSliceCenterChange(double x, double y, double z)
         break;
     case Axial:
         this->ctImage->getCTImageReslice(this->mode)->SetResliceAxesOrigin(this->ctImage->getModelCenter()[0], this->ctImage->getModelCenter()[1], z);
-        cursor_pos_x = this->ctImage->getModelCenter()[0] - x;
-        cursor_pos_y = y - this->ctImage->getModelCenter()[1];
+        cursor_pos_x = this->cursorBounds[1] - this->ctImage->getModelBounds()[1] + x;
+        cursor_pos_y = this->cursorBounds[3] - this->ctImage->getModelBounds()[3] + y;
         this->scrollBar->setValue(z);
         if (this->screwContourList.size() > 0) {
             this->plane->SetOrigin(this->ctImage->getModelCenter()[0], this->ctImage->getModelCenter()[1], z);

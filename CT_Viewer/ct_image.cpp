@@ -6,6 +6,7 @@
 #include <itkImage.h>
 #include <itkImageSeriesReader.h>
 #include <itkGDCMSeriesFileNames.h>
+#include <itkImageToVTKImageFilter.h>
 #include <vtkImageData.h>
 #include <vtkPointData.h>
 #include <vtkImageStencil.h>
@@ -17,6 +18,7 @@
 #include <vtkPolyDataToImageStencil.h>
 #include <itkCommand.h>
 #include <QDebug>
+#include <vtkImageFlip.h>
 
 CT_Image::CT_Image()
 {
@@ -51,44 +53,137 @@ private:
     QProgressDialog* dialog;
 };
 
+class CommandProgressUpdate : public itk::Command
+{
+public:
+    typedef  CommandProgressUpdate   Self;
+    typedef  itk::Command            Superclass;
+    typedef  itk::SmartPointer<Self> Pointer;
+    itkNewMacro(Self);
+protected:
+    CommandProgressUpdate()
+    {
+    };
+public:
+    void Execute(itk::Object *caller, const itk::EventObject & event)
+    {
+        Execute((const itk::Object *)caller, event);
+    }
+    void Execute(const itk::Object * object, const itk::EventObject & event)
+    {
+        const itk::ProcessObject * filter = dynamic_cast<const itk::ProcessObject *>(object);
+        if (!itk::ProgressEvent().CheckEvent(&event)) {
+            return;
+        }
+        this->dialog->setValue(static_cast<int>(filter->GetProgress() * 100));
+    }
+    void setProgressDialog(QProgressDialog* dialog)
+    {
+        this->dialog = dialog;
+    }
+private:
+    QProgressDialog* dialog;
+};
+
 void CT_Image::loadDicomFromDirectory(QString path, QProgressDialog * dialog)
 {
-    this->load_succeed = false;
     // load meta data
     this->path = path;
-    loadMetaInfo(dialog);
-    if (!this->load_succeed) {
+    using PixelType = unsigned short;
+    constexpr unsigned int Dimension = 3;
+    using ImageType = itk::Image<PixelType, Dimension>;
+    using ImageIOType = itk::GDCMImageIO;
+    auto dicomIO = ImageIOType::New();
+
+    // define file names loader
+    using NamesGeneratorType = itk::GDCMSeriesFileNames;
+    auto nameGenerator = NamesGeneratorType::New();
+    nameGenerator->SetInputDirectory(this->path.toStdString().c_str());
+    nameGenerator->SetGlobalWarningDisplay(false);
+    using FileNamesContainer = std::vector<std::string>;
+    FileNamesContainer fileNames = nameGenerator->GetInputFileNames();
+
+    // check if the directory has DICOM files
+    try {
+        using SeriesIdContainer = std::vector<std::string>;
+        const SeriesIdContainer& seriesUID = nameGenerator->GetSeriesUIDs();
+        auto seriesItr = seriesUID.begin();
+        auto seriesEnd = seriesUID.end();
+        if (seriesItr == seriesEnd) {
+            std::cout << "No Dicom Files Found!" << endl;
+            return;
+        }
+    }
+    catch (const itk::ExceptionObject & ex) {
+        // if no DICOM file is found
+        // terminate the read process and set the load_succeed to false
+        this->load_succeed = false;
+        std::cout << ex << std::endl;
         return;
     }
 
-    // read in DICOM file
-    vtkNew<vtkDICOMImageReader> reader;
-    reader->SetDirectoryName(path.toStdString().c_str());
-    reader->SetDataSpacing(3.2, 3.2, 1.5);
-    reader->SetDataByteOrderToLittleEndian();
+    // create a reader for inputs
+    using ReaderType = itk::ImageSeriesReader<ImageType>;
+    auto reader = ReaderType::New();
+    reader->SetImageIO(dicomIO);
+    reader->SetFileNames(fileNames);
+    reader->ForceOrthogonalDirectionOff();
+    CommandProgressUpdate::Pointer observer = CommandProgressUpdate::New();
+    observer->setProgressDialog(dialog);
+    reader->AddObserver(itk::ProgressEvent(), observer);
+    try {
+        reader->Update();
+    }
+    catch (const itk::ExceptionObject & ex) {
+        std::cout << ex << std::endl;
+        return;
+    }
 
-    vtkNew<ReadCTProgressUpdate> callback;
-    callback->setDialog(dialog);
-    reader->AddObserver(vtkCommand::ProgressEvent, callback);
-    reader->Update();
+    // create the dictionary of DICOM meta tags
+    createMetaInfo(dicomIO);
+
+    // convert itk data to vtk data
+    using FilterType = itk::ImageToVTKImageFilter<ImageType>;
+    auto filter = FilterType::New();
+    filter->SetInput(reader->GetOutput());
+    try {
+        filter->Update();
+    }
+    catch (const itk::ExceptionObject & error) {
+        std::cerr << "Error: " << error << std::endl;
+        this->load_succeed = false;
+        return;
+    }
+    
+    // flip the image since ITK and VTK has different coordinate system
+    vtkNew<vtkImageFlip> imageFlip;
+    imageFlip->SetInputData(filter->GetOutput());
+    imageFlip->SetFilteredAxes(1);
+    imageFlip->Update();
+
+    vtkNew<vtkImageFlip> imageFlip1;
+    imageFlip1->SetInputConnection(imageFlip->GetOutputPort());
+    imageFlip1->SetFilteredAxes(0);
+    imageFlip1->Update();
 
     // convert scalar type
     vtkNew<vtkImageCast> imageCast;
-    imageCast->SetInputConnection(reader->GetOutputPort());
+    imageCast->SetInputConnection(imageFlip1->GetOutputPort());
     imageCast->SetOutputScalarTypeToShort();
     imageCast->Update();
+
+    // why we need two?
     this->ctImage = imageCast->GetOutput();
-    this->originImage = imageCast->GetOutput();
 
     // initialize slice center and model center
     int extent[6];
     double spacing[3];
     double origin[3];
-    double center[3];
 
     this->ctImage->GetExtent(extent);
     this->ctImage->GetSpacing(spacing);
     this->ctImage->GetOrigin(origin);
+    this->ctImage->GetBounds(this->modelBounds);
 
     // the center position of the 3D model
     this->modelCenter[0] = origin[0] + spacing[0] * 0.5 * (extent[0] + extent[1]);
@@ -122,7 +217,7 @@ vtkSmartPointer<vtkImageAccumulate> CT_Image::getCTImageAccumulate()
     int max_val = 3100;
 
     vtkNew<vtkImageAccumulate> imageAccumulate;
-    imageAccumulate->SetInputData(this->originImage);
+    imageAccumulate->SetInputData(this->ctImage);
     imageAccumulate->SetComponentExtent(0, n_bins-1, 0, 0, 0, 0);
     imageAccumulate->SetComponentOrigin(min_val, 0, 0);
     imageAccumulate->SetComponentSpacing((max_val - min_val) / n_bins, 0, 0);
@@ -138,90 +233,6 @@ QMap<QString, QString> CT_Image::getMetaInfo()
 bool CT_Image::checkLoadSuccess()
 {
     return this->load_succeed;
-}
-
-class CommandProgressUpdate : public itk::Command
-{
-public:
-    typedef  CommandProgressUpdate   Self;
-    typedef  itk::Command            Superclass;
-    typedef  itk::SmartPointer<Self> Pointer;
-    itkNewMacro(Self);
-protected:
-    CommandProgressUpdate()
-    {
-    };
-public:
-    void Execute(itk::Object *caller, const itk::EventObject & event)
-    {
-        Execute((const itk::Object *)caller, event);
-    }
-    void Execute(const itk::Object * object, const itk::EventObject & event)
-    {
-        const itk::ProcessObject * filter = dynamic_cast<const itk::ProcessObject *>(object);
-        if (!itk::ProgressEvent().CheckEvent(&event)) {
-            return;
-        }
-        this->dialog->setValue(static_cast<int>(filter->GetProgress() * 100));
-    }
-    void setProgressDialog(QProgressDialog* dialog)
-    {
-        this->dialog = dialog;
-    }
-private:
-    QProgressDialog* dialog;
-};
-
-void CT_Image::loadMetaInfo(QProgressDialog* dialog)
-{
-    using PixelType = signed short;
-    constexpr unsigned int Dimension = 3;
-    using ImageType = itk::Image<PixelType, Dimension>;
-    using ImageIOType = itk::GDCMImageIO;
-    auto dicomIO = ImageIOType::New();
-
-    // define file names loader
-    using NamesGeneratorType = itk::GDCMSeriesFileNames;
-    auto nameGenerator = NamesGeneratorType::New();
-    nameGenerator->SetInputDirectory(this->path.toStdString().c_str());
-    nameGenerator->SetGlobalWarningDisplay(false);
-    using FileNamesContainer = std::vector<std::string>;
-    FileNamesContainer fileNames = nameGenerator->GetInputFileNames();
-
-    // check if the directory has Dicom files
-    try {
-        using SeriesIdContainer = std::vector<std::string>;
-        const SeriesIdContainer& seriesUID = nameGenerator->GetSeriesUIDs();
-        auto seriesItr = seriesUID.begin();
-        auto seriesEnd = seriesUID.end();
-        if (seriesItr == seriesEnd) {
-            std::cout << "No Dicom Files Found!" << endl;
-            return;
-        }
-    }
-    catch (const itk::ExceptionObject & ex) {
-        std::cout << ex << std::endl;
-        return;
-    }
-
-    // create a reader for inputs
-    using ReaderType = itk::ImageSeriesReader<ImageType>;
-    auto reader = ReaderType::New();
-    reader->SetImageIO(dicomIO);
-    reader->SetFileNames(fileNames);
-    reader->ForceOrthogonalDirectionOff();
-    CommandProgressUpdate::Pointer observer = CommandProgressUpdate::New();
-    observer->setProgressDialog(dialog);
-    reader->AddObserver(itk::ProgressEvent(), observer);
-    try {
-        reader->Update();
-    }
-    catch (const itk::ExceptionObject & ex) {
-        std::cout << ex << std::endl;
-        return;
-    }
-    createMetaInfo(dicomIO);
-    this->load_succeed = true;
 }
 
 void CT_Image::createReslices(int axis)
@@ -369,11 +380,6 @@ void CT_Image::updateImage(QVector<PlantingScrews*> screwList)
     this->ctImage = currentImage;
 }
 
-void CT_Image::resetImage()
-{
-    this->ctImage->DeepCopy(this->originImage);
-}
-
 QString CT_Image::getFilePath()
 {
     return this->path;
@@ -387,6 +393,11 @@ double * CT_Image::getModelCenter()
 double * CT_Image::getSliceCenter()
 {
     return this->sliceCenter;
+}
+
+double * CT_Image::getModelBounds()
+{
+    return this->modelBounds;
 }
 
 int * CT_Image::getContrastThreshold()

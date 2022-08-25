@@ -238,6 +238,7 @@ void CT_Viewer::handleAdd()
     item->setFlags(Qt::NoItemFlags);
     ui.listWidget->addItem(item);
     ui.listWidget->setItemWidget(item, screwModelItem);
+    connect(screwModelItem, &ActorListItem::actorChanged, this, &CT_Viewer::updateViews);
     connect(screwModelItem, &ActorListItem::colorChanged, this, &CT_Viewer::updateColors);
     connect(screwModelItem, &ActorListItem::widgetDeleted, this, &CT_Viewer::removeListItem);
 
@@ -267,6 +268,7 @@ void CT_Viewer::handleClear()
         ui.sagittalViewWidget->removeAll();
         ui.coronalViewWidget->removeAll();
         ui.axialViewWidget->removeAll();
+        this->screwList.clear();
     }
     QMessageBox msgBox;
     msgBox.setText("Clear!");

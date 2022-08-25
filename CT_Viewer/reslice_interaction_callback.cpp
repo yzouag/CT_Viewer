@@ -89,18 +89,27 @@ void resliceInteractionCallback::updateCursorPos()
     coordinateSystem->SetValue(1.0 * pos[0], 1.0 * pos[1]);
     double* worldPos = coordinateSystem->GetComputedWorldValue(this->ren);
 
+    // if the position is out of bound, set it to the bound
+    double bounds[6];
+    this->cursor->GetModelBounds(bounds);
+    worldPos[0] = std::max(worldPos[0], bounds[0]);
+    worldPos[0] = std::min(worldPos[0], bounds[1]);
+    worldPos[1] = std::max(worldPos[1], bounds[2]);
+    worldPos[1] = std::min(worldPos[1], bounds[3]);
+
     // update the sliceCenter in CT_Image
     int depth = this->ctImage->getSliceCenter()[this->imageWindowWidget->getViewMode()];
-    double* modelCenter = this->ctImage->getModelCenter();
+    double* modelBounds = this->ctImage->getModelBounds();
     switch (this->imageWindowWidget->getViewMode()) {
     case Sagittal:
-        this->ctImage->updateSliceCenter(depth, modelCenter[1] - worldPos[0], modelCenter[2] - worldPos[1]);
+        // sagittal view is different, need special care. The leftmost cursor maps to right most slice bound
+        this->ctImage->updateSliceCenter(depth, modelBounds[2] + bounds[1] - worldPos[0], modelBounds[5] - bounds[3] + worldPos[1]);
         break;
     case Coronal:
-        this->ctImage->updateSliceCenter(modelCenter[0] - worldPos[0], depth, modelCenter[2] - worldPos[1]);
+        this->ctImage->updateSliceCenter(modelBounds[1] - bounds[1] + worldPos[0], depth, modelBounds[5] - bounds[3] + worldPos[1]);
         break;
     case Axial:
-        this->ctImage->updateSliceCenter(modelCenter[0] - worldPos[0], modelCenter[1] + worldPos[1], depth); // this is very tricky and error prone
+        this->ctImage->updateSliceCenter(modelBounds[1] - bounds[1] + worldPos[0], modelBounds[3] - bounds[3] + worldPos[1], depth);
         break;
     }
 }
@@ -122,6 +131,7 @@ void resliceInteractionCallback::updateReslicePos()
     point[1] = 0.0;
     point[2] = spacing * deltaY;
     point[3] = 1.0;
+    matrix->MultiplyPoint(point, center);
 
     // if the reslice is out of the image, then cancel that origin move
     if (isOutBound(center[0], center[1], center[2])) {
@@ -134,10 +144,8 @@ void resliceInteractionCallback::updateReslicePos()
 
 bool resliceInteractionCallback::isOutBound(double x, double y, double z)
 {
-    double x_bound = this->ctImage->getModelCenter()[0];
-    double y_bound = this->ctImage->getModelCenter()[1];
-    double z_bound = this->ctImage->getModelCenter()[2];
-    if (x > x_bound || y > y_bound || z > z_bound)
+    double* bounds = this->ctImage->getModelBounds();
+    if (x < bounds[0] || x > bounds[1] || y < bounds[2] || y > bounds[3] || z < bounds[4] || z > bounds[5])
         return true;
     else
         return false;

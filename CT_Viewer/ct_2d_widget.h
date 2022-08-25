@@ -48,6 +48,7 @@ private:
     ViewMode mode = ThreeDimension;
     CT_Image* ctImage;
     vtkSmartPointer<vtkCursor2D> cursor;
+    double cursorBounds[6];
     vtkImageMapToColors* mapToColor;
     QScrollBar* scrollBar;
     vtkSmartPointer<vtkPlane> plane;
