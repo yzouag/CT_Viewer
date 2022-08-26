@@ -107,6 +107,7 @@ vtkSmartPointer<vtkProp> CT_2d_Widget::renderCTReslice(CT_Image * ctImage)
 
     // add actors to render
     this->ren->AddActor(imageActor);
+    this->imageActor = imageActor;
     this->ren->AddActor(cursorActor);
     this->ren->ResetCamera();
 
@@ -189,7 +190,12 @@ vtkProp* CT_2d_Widget::addScrew(PlantingScrews* screw)
     
     // create the actor
     vtkNew<vtkActor> screwContour;
-    screwContour->GetProperty()->SetColor(255, 0, 0);
+    if(strncmp(screw->getScrewName(), "cone", 5) == 0){
+        screwContour->GetProperty()->SetColor(0, 206, 209);
+    }
+    else {
+        screwContour->GetProperty()->SetColor(255, 255, 255);
+    }
     screwContour->SetMapper(coneContourMapper);
     // to put the cone contour to the same position as the reslice image
     vtkNew<vtkTransform> t;
@@ -211,7 +217,6 @@ vtkProp* CT_2d_Widget::addScrew(PlantingScrews* screw)
         screwContour->SetScale(-1, 1, 1);
         break;
     }
-    screwContour->GetProperty()->SetColor(255, 0, 0);
     
     // add the contour to the 2D view render
     this->ren->AddActor(screwContour);
@@ -222,6 +227,7 @@ vtkProp* CT_2d_Widget::addScrew(PlantingScrews* screw)
     return screwContour;
 }
 
+// remove all screws' and measure widgets' slice actor 
 void CT_2d_Widget::removeAll()
 {
     for (auto actor : this->screwContourList) {
@@ -229,6 +235,15 @@ void CT_2d_Widget::removeAll()
     }
     this->renWin->Render();
     screwContourList.clear();
+}
+
+void CT_2d_Widget::showOnlyCTReslice()
+{
+    for (int i = 0; i < this->ren->GetViewProps()->GetNumberOfItems(); i++) {
+        static_cast<vtkProp*>(this->ren->GetViewProps()->GetItemAsObject(i))->VisibilityOff();
+    }
+    this->imageActor->VisibilityOn();
+    this->renWin->Render();
 }
 
 // must be done after set view mode
@@ -257,7 +272,7 @@ void CT_2d_Widget::updateWhenSliceCenterChange(double x, double y, double z)
             this->plane->SetOrigin(x, this->ctImage->getModelCenter()[1], this->ctImage->getModelCenter()[2]);
             this->plane->Modified();
             for (auto actor : this->screwContourList) {
-                    actor->SetPosition(-x - 1, -this->ctImage->getModelCenter()[1], -this->ctImage->getModelCenter()[2]);
+                actor->SetPosition(-x - 1, -this->ctImage->getModelCenter()[1], -this->ctImage->getModelCenter()[2]);
             }
         }
         break;

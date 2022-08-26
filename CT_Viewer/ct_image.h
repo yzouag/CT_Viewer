@@ -12,7 +12,7 @@
 #include <QMap>
 
 class CT_Image : public QObject
-{
+{ 
     Q_OBJECT;
 public:
     CT_Image();
@@ -23,12 +23,13 @@ public:
     vtkSmartPointer<vtkImageAccumulate> getCTImageAccumulate();
     QMap<QString, QString> getMetaInfo();
     bool checkLoadSuccess();
-    void updateImage(QVector<PlantingScrews*> screwList);
+    void updateImage(QVector<PlantingScrews*> screwList, QProgressDialog* dialog);
     QString getFilePath();
     double* getModelCenter();
     double* getSliceCenter();
     double* getModelBounds();
     int* getContrastThreshold();
+    void saveImageData(QString diretoryPath, QProgressDialog* dialog);
 
 public slots:
     void updateSliceCenter(double x, double y, double z);
@@ -69,5 +70,7 @@ private:
     double sliceCenter[3];
     double modelCenter[3];
     double modelBounds[6];
+    signed short min_pixel_val;
+    signed short max_pixel_val;
     int contrastThreshold[2] = {-1000, 1000};
 };

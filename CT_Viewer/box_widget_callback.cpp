@@ -11,15 +11,21 @@ BoxWidgetCallback::~BoxWidgetCallback()
 
 void BoxWidgetCallback::Execute(vtkObject* caller, unsigned long, void*)
 {
+    // get the transformation of the outline box widget
     vtkNew<vtkTransform> t;
     vtkBoxWidget* widget = reinterpret_cast<vtkBoxWidget*>(caller);
     widget->GetTransform(t);
+
+    // apply the same transformation to the cone source or screw source
+    // since the transformation we get from widget is corresponding to its original position
+    // the transformation we apply to the cone source should also be the original position
+    // the purpose of origin data is to get the original position
     vtkNew<vtkTransformPolyDataFilter> filter;
     filter->SetTransform(t);
     filter->SetInputData(this->originData);
     filter->Update();
-    data->DeepCopy(filter->GetOutput());
-    data->Modified();
+    this->data->DeepCopy(filter->GetOutput());
+    this->data->Modified();
     for (int i = 0; i < 3; i++) {
         this->screw->getSliceWidget()[i]->GetRenderWindow()->Render();
     }
@@ -49,7 +55,7 @@ void BoxWidgetCallback::setScrew(PlantingScrews* screw)
 {
     this->screw = screw;
     vtkPolyDataMapper* mapper = static_cast<vtkPolyDataMapper*>(this->screw->getScrewActor()->GetMapper());
-    data = mapper->GetInput();
-    originData = vtkPolyData::New();
-    originData->DeepCopy(mapper->GetInput());
+    this->data = mapper->GetInput();
+    this->originData = vtkPolyData::New();
+    this->originData->DeepCopy(mapper->GetInput());
 }

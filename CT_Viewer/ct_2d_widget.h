@@ -37,6 +37,7 @@ public:
     ViewMode getViewMode();
     vtkProp* addScrew(PlantingScrews* screw);
     void removeAll();
+    void showOnlyCTReslice();
 
 public slots:
     void updateWhenSliceCenterChange(double x, double y, double z);
@@ -53,5 +54,6 @@ private:
     QScrollBar* scrollBar;
     vtkSmartPointer<vtkPlane> plane;
     QVector<vtkSmartPointer<vtkActor>> screwContourList;
+    vtkImageActor* imageActor;
     void setWindowTitle();
 };

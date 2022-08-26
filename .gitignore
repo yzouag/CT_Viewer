@@ -2,8 +2,7 @@
 *.sln
 *.db
 *.opendb
-CT*/
-!CT_Viewer/
+data/
 x64/
 *.vcxproj*
 json/

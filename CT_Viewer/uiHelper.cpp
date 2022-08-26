@@ -33,5 +33,6 @@ QProgressDialog* createProgressDialog(QString title, QString prompt, int range)
     progressDialog->setLabelText(prompt);
     progressDialog->setCancelButtonText("Cancel");
     progressDialog->setRange(0, range);
+    progressDialog->setCancelButton(nullptr);
     return progressDialog;
 }

@@ -13,13 +13,14 @@
 #include <QString>
 #include <QVector>
 #include "ct_image.h"
+#include <QProgressDialog>
 
 class CT_Viewer : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    CT_Viewer(CT_Image* ctImage, QWidget *parent = Q_NULLPTR);
+    CT_Viewer(CT_Image* ctImage, QProgressDialog* dialog, QWidget *parent = Q_NULLPTR);
     ~CT_Viewer();
     void init2DViews();
     void loadSliceAndThreshold(double* sliceCenter, int* contrastThreshold);
@@ -33,7 +34,8 @@ private:
     void takeScreenshot(QWidget* widget);
 
 private slots:
-    void loadCT();
+    void handleOpen();
+    void handleSave();
     void handleAdd();
     void handleClear();
     void handleDetail();

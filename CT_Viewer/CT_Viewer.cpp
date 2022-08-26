@@ -16,9 +16,11 @@
 #include <QListWidgetItem>
 #include <vtkProp.h>
 
-CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
+CT_Viewer::CT_Viewer(CT_Image* ctImage, QProgressDialog* dialog, QWidget *parent) : QMainWindow(parent)
 {
     ui.setupUi(this);
+    dialog->setLabelText("Initialize UI ...");
+    dialog->setValue(0);
 
     // set the view direction for each 2D widget
     // show the caption for each 2D View
@@ -42,7 +44,8 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
     }
 
     // connect actions
-    connect(ui.actionOpen, SIGNAL(triggered()), this, SLOT(loadCT()));
+    connect(ui.actionOpen, SIGNAL(triggered()), this, SLOT(handleOpen()));
+    connect(ui.actionSave, SIGNAL(triggered()), this, SLOT(handleSave()));
     connect(ui.addButton, SIGNAL(clicked()), this, SLOT(handleAdd()));
     connect(ui.clearButton, SIGNAL(clicked()), this, SLOT(handleClear()));
     connect(ui.detailButton, SIGNAL(clicked()), this, SLOT(handleDetail()));
@@ -100,14 +103,22 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
 
     displayMetaInfo(ui, this->ctImage->getMetaInfo());
 
+    dialog->setValue(100);
+    dialog->setLabelText("initialize Four Views ...");
+    dialog->setValue(0);
+
     QList<vtkProp*> actorList;
     // create 3D volume and add to window
     actorList.append(ui.mainViewWidget->setCTImage(this->ctImage->getCTImageData()));
+    dialog->setValue(20);
 
     // create 2D view for each slice
     actorList.append(ui.sagittalViewWidget->renderCTReslice(this->ctImage));
+    dialog->setValue(40);
     actorList.append(ui.coronalViewWidget->renderCTReslice(this->ctImage));
+    dialog->setValue(60);
     actorList.append(ui.axialViewWidget->renderCTReslice(this->ctImage));
+    dialog->setValue(80);
     
     // add the CT Model to the List View
     QListWidgetItem *item = new QListWidgetItem;
@@ -125,6 +136,7 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QWidget *parent) : QMainWindow(parent)
     ui.coronalViewWidget->setScrollBar(this->ui.coronalScrollBar);
     ui.axialViewWidget->setScrollBar(this->ui.axialScrollBar);
 
+    dialog->setValue(100);
     // this is to make sure when load a new Dicom image
     // the contrast should reset
     CT_Contrast_Widget::first_init = true;
@@ -136,6 +148,7 @@ CT_Viewer::~CT_Viewer()
 {
     qDebug() << QDir(this->ctImage->getFilePath()).dirName() << this->ctImage->getFilePath();
     try {
+        this->ui.axialViewWidget->showOnlyCTReslice();
         ImageRegister imageInfo(QDir(this->ctImage->getFilePath()).dirName(), this->ctImage->getFilePath(), this->ui.axialViewWidget);
         imageInfo.setContrastThreshold(this->ctImage->getContrastThreshold()[0], this->ctImage->getContrastThreshold()[1]);
         imageInfo.setSliceCenter(this->ctImage->getSliceCenter());
@@ -160,44 +173,53 @@ void CT_Viewer::takeScreenshot(QWidget* widget)
     pixmap.save(&file, "PNG");
 }
 
-// trigger when click open, open another image and reload the CT_Image
-void CT_Viewer::loadCT()
+// trigger when click open, open another image and create a new CT_Viewer
+void CT_Viewer::handleOpen()
 {
-    // load file directory
     QString filename = QFileDialog::getExistingDirectory(this, "CT file directory", "../");
-    QProgressDialog* progressDialog = createProgressDialog(tr("CT Loading"), tr("Loading CT, Please Wait..."), 100);
-    this->ctImage->loadDicomFromDirectory(filename, progressDialog);
-    
+    // if no file inputs
+    if (filename.length() == 0) {
+        return;
+    }
+
+    QProgressDialog* progressDialog = createProgressDialog(tr("CT Loading"), tr("Loading CT, Please Wait..."), 101);
+    CT_Image* ctImage = new CT_Image();
+    ctImage->loadDicomFromDirectory(filename, progressDialog);
+    progressDialog->deleteLater();
+
     // check the path is valid
-    if (!this->ctImage->checkLoadSuccess()) {
+    if (!ctImage->checkLoadSuccess()) {
         progressDialog->close();
-        progressDialog->deleteLater();
         QMessageBox msgBox;
         msgBox.setText("No Dicom Files in the directory or Loading Failed!");
         msgBox.exec();
+        delete ctImage;
         return;
     }
-    
-    displayMetaInfo(ui, this->ctImage->getMetaInfo());
-    this->CT_uploaded = true;
+    this->close();
 
-    // create 3D volume and add to window
-    ui.mainViewWidget->setCTImage(this->ctImage->getCTImageData());
+    // load the main window
+    CT_Viewer* w = new CT_Viewer(ctImage, progressDialog);
+    w->setAttribute(Qt::WA_DeleteOnClose);
+    w->show();
+    w->init2DViews();
+    this->ctImage->deleteLater();
+}
 
-    // create 2D view for each slice
-    ui.sagittalViewWidget->renderCTReslice(this->ctImage);
-    ui.coronalViewWidget->renderCTReslice(this->ctImage);
-    ui.axialViewWidget->renderCTReslice(this->ctImage);
-
-    // also set the range of the scroll bar
-    ui.sagittalViewWidget->setScrollBar(this->ui.sagittalScrollBar);
-    ui.coronalViewWidget->setScrollBar(this->ui.coronalScrollBar);
-    ui.axialViewWidget->setScrollBar(this->ui.axialScrollBar);
-
-    progressDialog->deleteLater();
-    // this is to make sure when load a new Dicom image
-    // the contrast should reset
-    CT_Contrast_Widget::first_init = true;
+// two options for save:
+// 1. save the image + screws as a new DICOM image
+// 2. save as a project directory (or a JSON file?)
+void CT_Viewer::handleSave()
+{
+    QString dirName = QFileDialog::getExistingDirectory(this, "Save DICOM files to this directory", "../");
+    // if no file inputs
+    if (dirName.length() == 0) {
+        return;
+    }
+    QProgressDialog* dialog = createProgressDialog("Save", "Exporting Image...", 100);
+    this->ctImage->updateImage(screwList, dialog); // TODO: How to exclude removed screws?
+    this->ctImage->saveImageData(dirName, dialog);
+    dialog->deleteLater();
 }
 
 // when add button clicked, add different screw type to 

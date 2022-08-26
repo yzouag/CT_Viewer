@@ -19,6 +19,12 @@
 #include <itkCommand.h>
 #include <QDebug>
 #include <vtkImageFlip.h>
+#include <itkMinimumMaximumImageCalculator.h>
+#include <itkVTKImageToImageFilter.h>
+#include <itkImageSeriesWriter.h>
+#include <itkNumericSeriesFileNames.h>
+#include "uiHelper.h"
+#include <vtkPolyDataMapper.h>
 
 CT_Image::CT_Image()
 {
@@ -32,26 +38,6 @@ CT_Image::~CT_Image()
         this->ctReslices[i] = nullptr;
     }
 }
-
-class ReadCTProgressUpdate : public vtkCommand
-{
-public:
-    static ReadCTProgressUpdate* New()
-    {
-        return new ReadCTProgressUpdate;
-    }
-    void setDialog(QProgressDialog* dialog)
-    {
-        this->dialog = dialog;
-    }
-    virtual void Execute(vtkObject*caller, unsigned long eventId, void* callData)
-    {
-        double* progress = static_cast<double*>(callData);
-        this->dialog->setValue((int)(*progress * 100));
-    }
-private:
-    QProgressDialog* dialog;
-};
 
 class CommandProgressUpdate : public itk::Command
 {
@@ -89,7 +75,7 @@ void CT_Image::loadDicomFromDirectory(QString path, QProgressDialog * dialog)
 {
     // load meta data
     this->path = path;
-    using PixelType = unsigned short;
+    using PixelType = signed short;
     constexpr unsigned int Dimension = 3;
     using ImageType = itk::Image<PixelType, Dimension>;
     using ImageIOType = itk::GDCMImageIO;
@@ -138,6 +124,13 @@ void CT_Image::loadDicomFromDirectory(QString path, QProgressDialog * dialog)
         std::cout << ex << std::endl;
         return;
     }
+
+    using ImageCalculatorFilterType = itk::MinimumMaximumImageCalculator<ImageType>;
+    ImageCalculatorFilterType::Pointer imageCalculatorFilter = ImageCalculatorFilterType::New();
+    imageCalculatorFilter->SetImage(reader->GetOutput());
+    imageCalculatorFilter->Compute();
+    this->min_pixel_val = imageCalculatorFilter->GetMinimum();
+    this->max_pixel_val = imageCalculatorFilter->GetMaximum();
 
     // create the dictionary of DICOM meta tags
     createMetaInfo(dicomIO);
@@ -213,8 +206,8 @@ vtkSmartPointer<vtkImageReslice> CT_Image::getCTImageReslice(int axis)
 vtkSmartPointer<vtkImageAccumulate> CT_Image::getCTImageAccumulate()
 {
     int n_bins = 50;
-    int min_val = -3100; // TODO: how to get this two number? use itk will be easier, so we need to re-implement our loading
-    int max_val = 3100;
+    int min_val = this->min_pixel_val;
+    int max_val = this->max_pixel_val;
 
     vtkNew<vtkImageAccumulate> imageAccumulate;
     imageAccumulate->SetInputData(this->ctImage);
@@ -284,29 +277,29 @@ void CT_Image::createMetaInfo(itk::SmartPointer<itk::GDCMImageIO> dicomIO)
     this->metaInfo = metaInfo;
 }
 
-void CT_Image::updateImage(QVector<PlantingScrews*> screwList)
+void CT_Image::updateImage(QVector<PlantingScrews*> screwList, QProgressDialog* dialog)
 {
+    // set the progress dialog
+    dialog->setValue(0);
+    dialog->setLabelText("Generating New Image...");
+    
+    // append each screw data one by one
     vtkSmartPointer<vtkImageData> currentImage = this->ctImage;
+    int current_progress = 0;
     for (auto screw : screwList) {
-        // get the geometry information of the bounding box widget
-        vtkNew<vtkPolyData> pd;
-        screw->getScrewWidget()->GetPolyData(pd);
-        double pos[9][3];
-        for (int i = 0; i < 8; i++) {
-            pd->GetPoints()->GetPoint(i, pos[i]);
-        }
-        pd->GetPoints()->GetPoint(14, pos[8]);
-
         // create an empty image and set the size to be the same as the CT image
         vtkNew<vtkImageData> whiteImage;
         double spacing[3];
         ctImage->GetSpacing(spacing);
         whiteImage->SetSpacing(spacing);
+        
         int extent[6];
-
         ctImage->GetExtent(extent);
         whiteImage->SetExtent(extent);
-        whiteImage->SetOrigin(-pos[8][0], -pos[8][1], -pos[8][2]); // why there must be a minus sign????
+
+        double origin[3];
+        this->ctImage->GetOrigin(origin);
+        whiteImage->SetOrigin(origin);
         whiteImage->AllocateScalars(VTK_SHORT, 1);
 
         // fill the image with foreground voxels:
@@ -318,48 +311,17 @@ void CT_Image::updateImage(QVector<PlantingScrews*> screwList)
 
         // create a polygonal data to image stencil filter
         vtkNew<vtkPolyDataToImageStencil> pol2stenc;
-        pol2stenc->SetOutputOrigin(-pos[8][0], -pos[8][1], -pos[8][2]);
         pol2stenc->SetOutputSpacing(spacing);
         pol2stenc->SetOutputWholeExtent(extent);
+        pol2stenc->SetOutputOrigin(this->ctImage->GetOrigin());
 
-        // create the image source
-        if (strncmp(screw->getScrewName(), "cone", 5) == 0) {
-            double height = std::sqrt(vtkMath::Distance2BetweenPoints(pos[0], pos[1]));
-            double radius = 0.5 * std::sqrt(vtkMath::Distance2BetweenPoints(pos[1], pos[2]));
-            vtkNew<vtkConeSource> coneSource;
-            coneSource->SetRadius(radius);
-            coneSource->SetHeight(height);
-            coneSource->SetDirection(pos[1][0] - pos[0][0], pos[1][1] - pos[0][1], pos[1][2] - pos[0][2]);
-            coneSource->SetResolution(500);
-            coneSource->Update();
-            // polygonal data --> image stencil:
-            pol2stenc->SetInputConnection(coneSource->GetOutputPort());
-        } else {
-            vtkNew<vtkPolyDataReader> reader;
-            std::string screwPath("./screwModels/");
-            screwPath.append(screw->getScrewName());
-            screwPath.append(".vtk");
-            reader->SetFileName(screwPath.c_str());
-
-            // get the orientation of the screw added
-            double orientation[3];
-            vtkNew<vtkTransform> targetTransform;
-            screw->getScrewWidget()->GetTransform(targetTransform);
-            targetTransform->GetOrientation(orientation);
-
-            // add the orientation to the polygonal data
-            vtkNew<vtkTransform> t;
-            t->RotateZ(orientation[2]);
-            t->RotateX(orientation[0]);
-            t->RotateY(orientation[1]);
-            vtkNew<vtkTransformPolyDataFilter> transformFilter;
-            transformFilter->SetTransform(t);
-            transformFilter->SetInputConnection(reader->GetOutputPort());
-
-            // polygonal data --> image stencil
-            pol2stenc->SetInputConnection(transformFilter->GetOutputPort());
-        }
-
+        // get screw data
+        vtkPolyDataMapper* mapper = static_cast<vtkPolyDataMapper*>(screw->getScrewActor()->GetMapper());
+        vtkPolyData* screw_data = mapper->GetInput();
+        
+        pol2stenc->SetInputData(screw_data);
+        pol2stenc->Update();
+        
         // cut the corresponding white image and set the background:
         vtkNew<vtkImageStencil> imgstenc;
         imgstenc->SetInputData(whiteImage);
@@ -372,10 +334,13 @@ void CT_Image::updateImage(QVector<PlantingScrews*> screwList)
         ctBlender->SetBlendMode(VTK_IMAGE_BLEND_MODE_NORMAL);
         ctBlender->AddInputData(currentImage);
         ctBlender->AddInputData(imgstenc->GetOutput());
-        ctBlender->SetOpacity(0, 1.0);
+        ctBlender->SetOpacity(0, 0.5);
         ctBlender->SetOpacity(1, 0.5);
         ctBlender->Update();
         currentImage = ctBlender->GetOutput();
+
+        current_progress += 100 / screwList.size();
+        dialog->setValue(current_progress);
     }
     this->ctImage = currentImage;
 }
@@ -403,6 +368,84 @@ double * CT_Image::getModelBounds()
 int * CT_Image::getContrastThreshold()
 {
     return this->contrastThreshold;
+}
+
+void CT_Image::saveImageData(QString diretoryPath, QProgressDialog* dialog)
+{
+    dialog->setValue(0);
+    dialog->setLabelText("Exporting Image...");
+
+    using PixelType = signed short;
+    constexpr unsigned int Dimension = 3;
+    using ImageType = itk::Image<PixelType, Dimension>;
+    
+    // convert VTK image to ITK image
+    // before conversion, flip the image
+    vtkNew<vtkImageFlip> imageFlip;
+    imageFlip->SetInputData(this->ctImage);
+    imageFlip->SetFilteredAxes(0);
+    imageFlip->Update();
+
+    vtkNew<vtkImageFlip> imageFlip1;
+    imageFlip1->SetInputConnection(imageFlip->GetOutputPort());
+    imageFlip1->SetFilteredAxes(1);
+    imageFlip1->Update();
+
+    // convert to itk image
+    using FilterType = itk::VTKImageToImageFilter<ImageType>;
+    auto filter = FilterType::New();
+    filter->SetInput(imageFlip1->GetOutput());
+    try {
+        filter->Update();
+    }
+    catch (const itk::ExceptionObject & error) {
+        std::cerr << "Error: " << error << std::endl;
+        return;
+    }
+
+    using ImageIOType = itk::GDCMImageIO;
+    auto dicomIO = ImageIOType::New();
+    constexpr unsigned int InputDimension = 3;
+    constexpr unsigned int OutputDimension = 2;
+    using InputImageType = itk::Image<PixelType, InputDimension>;
+    using OutputImageType = itk::Image<PixelType, OutputDimension>;
+    using SeriesWriterType = itk::ImageSeriesWriter<InputImageType, OutputImageType>;
+    using NamesGeneratorType = itk::GDCMSeriesFileNames;
+    using ReaderType = itk::ImageSeriesReader<ImageType>;
+    auto nameGenerator = NamesGeneratorType::New();
+    nameGenerator->SetInputDirectory(this->path.toStdString().c_str());
+    auto reader = ReaderType::New();
+    reader->SetImageIO(dicomIO);
+    using FileNamesContainer = std::vector<std::string>;
+    FileNamesContainer fileNames = nameGenerator->GetInputFileNames();
+    
+    reader->SetFileNames(fileNames);
+    reader->ForceOrthogonalDirectionOff();
+    reader->Update();
+    
+    using OutputNamesGeneratorType = itk::NumericSeriesFileNames;
+    auto outputNames = OutputNamesGeneratorType::New();
+    std::string seriesFormat(diretoryPath.toStdString());
+    seriesFormat = seriesFormat + "/" + "IM%d.dcm";
+    outputNames->SetSeriesFormat(seriesFormat.c_str());
+    outputNames->SetStartIndex(1);
+    outputNames->SetEndIndex(fileNames.size());
+    
+    auto seriesWriter = SeriesWriterType::New();
+    seriesWriter->SetInput(filter->GetOutput());
+    seriesWriter->SetImageIO(dicomIO);
+    seriesWriter->SetFileNames(outputNames->GetFileNames());
+    seriesWriter->SetMetaDataDictionaryArray(reader->GetMetaDataDictionaryArray());
+    CommandProgressUpdate::Pointer observer = CommandProgressUpdate::New();
+    observer->setProgressDialog(dialog);
+    seriesWriter->AddObserver(itk::ProgressEvent(), observer);
+    try {
+        seriesWriter->Update();
+    }
+    catch (const itk::ExceptionObject & excp) {
+        std::cerr << "Exception thrown while writing the series " << std::endl;
+        std::cerr << excp << std::endl;
+    }
 }
 
 void CT_Image::updateSliceCenter(double x, double y, double z)

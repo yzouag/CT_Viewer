@@ -56,7 +56,7 @@ void Entry_Widget::handleOpenImage()
     blockAllSignals();
     // load file directory
     QString filename = QFileDialog::getExistingDirectory(this, "CT file directory", "../");
-    QProgressDialog* progressDialog = createProgressDialog(tr("CT Loading"), tr("Loading CT, Please Wait..."), 100);
+    QProgressDialog* progressDialog = createProgressDialog(tr("CT Loading"), tr("Loading CT, Please Wait..."), 101);
     CT_Image* ctImage = new CT_Image();
     ctImage->loadDicomFromDirectory(filename, progressDialog);
     progressDialog->deleteLater();
@@ -72,7 +72,7 @@ void Entry_Widget::handleOpenImage()
     }
 
     // load the main window
-    CT_Viewer* w = new CT_Viewer(ctImage);
+    CT_Viewer* w = new CT_Viewer(ctImage, progressDialog);
     w->setAttribute(Qt::WA_DeleteOnClose);
     w->show();
     w->init2DViews();
@@ -90,15 +90,17 @@ void Entry_Widget::handleSelectHistoryImage(QListWidgetItem* item)
     RecentImageListWidgetItem* selectedItem = static_cast<RecentImageListWidgetItem*>(item);
     ImageRegister* selectedImage = selectedItem->getRecentImageInfo();
 
-    QProgressDialog* progressDialog = createProgressDialog(tr("CT Loading"), tr("Loading CT, Please Wait..."), 100);
+    QProgressDialog* progressDialog = createProgressDialog(tr("CT Loading"), tr("Loading CT, Please Wait..."), 101);
     CT_Image* ctImage = new CT_Image();
     ctImage->loadDicomFromDirectory(selectedImage->getFilePath(), progressDialog);
 
-    CT_Viewer* w = new CT_Viewer(ctImage);
+    CT_Viewer* w = new CT_Viewer(ctImage, progressDialog);
     w->loadSliceAndThreshold(selectedImage->getSliceCenter(), selectedImage->getContrastThreshold());
     w->loadCameraSettings(selectedImage->getCameraPos(), selectedImage->getFocalPoint());
     w->setAttribute(Qt::WA_DeleteOnClose);
     w->show();
     w->init2DViews();
     this->close();
+    progressDialog->close();
+    progressDialog->deleteLater();
 }
