@@ -19,6 +19,7 @@
 CT_Viewer::CT_Viewer(CT_Image* ctImage, QProgressDialog* dialog, QWidget *parent) : QMainWindow(parent)
 {
     ui.setupUi(this);
+    this->setWindowTitle("CT Viewer");
     dialog->setLabelText("Initialize UI ...");
     dialog->setValue(0);
 
@@ -148,8 +149,7 @@ CT_Viewer::~CT_Viewer()
 {
     qDebug() << QDir(this->ctImage->getFilePath()).dirName() << this->ctImage->getFilePath();
     try {
-        this->ui.axialViewWidget->showOnlyCTReslice();
-        ImageRegister imageInfo(QDir(this->ctImage->getFilePath()).dirName(), this->ctImage->getFilePath(), this->ui.axialViewWidget);
+        ImageRegister imageInfo(QDir(this->ctImage->getFilePath()).dirName(), this->ctImage->getFilePath(), this->ui.axialViewWidget, &this->screwList);
         imageInfo.setContrastThreshold(this->ctImage->getContrastThreshold()[0], this->ctImage->getContrastThreshold()[1]);
         imageInfo.setSliceCenter(this->ctImage->getSliceCenter());
         ui.mainViewWidget->getCameraSettings(imageInfo.getCameraPos(), imageInfo.getFocalPoint());
@@ -235,10 +235,15 @@ void CT_Viewer::handleAdd()
         return;
     }
     PlantingScrews* screw = new PlantingScrews(widget.getSelectModel());
+    this->addScrew(screw);
+}
+
+void CT_Viewer::addScrew(PlantingScrews* screw)
+{
     screw->setMainViewWidget(this->ui.mainViewWidget);
     screw->setSliceWidgets(this->ui.sagittalViewWidget, this->ui.coronalViewWidget, this->ui.axialViewWidget);
     screwList.append(screw);
-    
+
     QList<vtkProp*> actorList;
     ui.mainViewWidget->addScrew(screw);
     actorList.append(ui.sagittalViewWidget->addScrew(screw));
@@ -250,8 +255,7 @@ void CT_Viewer::handleAdd()
     ActorListItem* screwModelItem;
     if (strncmp("cone", screw->getScrewName(), 5) == 0) {
         screwModelItem = new ActorListItem(CONE, "cone", item);
-    }
-    else {
+    } else {
         screwModelItem = new ActorListItem(SCREW, screw->getScrewName(), item);
     }
     screwModelItem->setCorrespondingBoxWidget(screw->getScrewWidget());
@@ -541,4 +545,13 @@ void CT_Viewer::loadCameraSettings(double * cameraPos, double * focalPoint)
 {
     this->ui.mainViewWidget->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->GetActiveCamera()->SetPosition(cameraPos);
     this->ui.mainViewWidget->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->GetActiveCamera()->SetFocalPoint(focalPoint);
+}
+
+void CT_Viewer::loadScrews(QVector<QPair<QString, QVector<double>>>& screwActorList)
+{
+    for (int i = 0; i < screwActorList.size(); i++) {
+        QString screwName = screwActorList.at(i).first;
+        PlantingScrews* screw = new PlantingScrews(screwName.toStdString().c_str(), screwActorList.at(i).second);
+        this->addScrew(screw);
+    }
 }

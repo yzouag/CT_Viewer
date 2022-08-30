@@ -15,10 +15,11 @@ public:
 private:
     Ui::Entry_Widget ui;
     void loadRecentImages();
-    void blockAllSignals();
+    void loadRecentWorkspaces();
+    void blockAllSignals(bool block);
 
 private slots:
     void handleOpenImage();
-    void handleOpenWorkspace();
     void handleSelectHistoryImage(QListWidgetItem* item);
+    void handleSelectHistoryWorkspace(QListWidgetItem* item);
 };

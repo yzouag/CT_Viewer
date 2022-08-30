@@ -71,7 +71,7 @@ private:
     QProgressDialog* dialog;
 };
 
-void CT_Image::loadDicomFromDirectory(QString path, QProgressDialog * dialog)
+bool CT_Image::loadDicomFromDirectory(QString path, QProgressDialog* dialog)
 {
     // load meta data
     this->path = path;
@@ -97,7 +97,8 @@ void CT_Image::loadDicomFromDirectory(QString path, QProgressDialog * dialog)
         auto seriesEnd = seriesUID.end();
         if (seriesItr == seriesEnd) {
             std::cout << "No Dicom Files Found!" << endl;
-            return;
+            this->load_succeed = false;
+            return false;
         }
     }
     catch (const itk::ExceptionObject & ex) {
@@ -105,7 +106,7 @@ void CT_Image::loadDicomFromDirectory(QString path, QProgressDialog * dialog)
         // terminate the read process and set the load_succeed to false
         this->load_succeed = false;
         std::cout << ex << std::endl;
-        return;
+        return false;
     }
 
     // create a reader for inputs
@@ -122,7 +123,8 @@ void CT_Image::loadDicomFromDirectory(QString path, QProgressDialog * dialog)
     }
     catch (const itk::ExceptionObject & ex) {
         std::cout << ex << std::endl;
-        return;
+        this->load_succeed = false;
+        return false;
     }
 
     using ImageCalculatorFilterType = itk::MinimumMaximumImageCalculator<ImageType>;
@@ -145,7 +147,7 @@ void CT_Image::loadDicomFromDirectory(QString path, QProgressDialog * dialog)
     catch (const itk::ExceptionObject & error) {
         std::cerr << "Error: " << error << std::endl;
         this->load_succeed = false;
-        return;
+        return false;
     }
     
     // flip the image since ITK and VTK has different coordinate system
@@ -191,6 +193,8 @@ void CT_Image::loadDicomFromDirectory(QString path, QProgressDialog * dialog)
     for (int i = 0; i < 3; i++) {
         createReslices(i);
     }
+    this->load_succeed = true;
+    return true;
 }
 
 vtkSmartPointer<vtkImageData> CT_Image::getCTImageData()

@@ -6,6 +6,8 @@
 #include <vtkCommand.h>
 #include <vtkTransform.h>
 #include <vtkPolyDataReader.h>
+#include <vtkMatrix4x4.h>
+#include <vtkTransformPolyDataFilter.h>
 
 PlantingScrews::PlantingScrews(const char* screwName)
 {
@@ -16,6 +18,48 @@ PlantingScrews::PlantingScrews(const char* screwName)
     }
     else {
         addCustomScrew(screwName);
+    }
+    // create box widget and attach to coneActor
+    this->screwWidget = createBoxWidget();
+    if (strncmp("cone", screwName, 5) != 0) {
+        // for customize screws
+        // disable the scaling (screw size should be fixed)
+        this->screwWidget->HandlesOff();
+        this->screwWidget->ScalingEnabledOff();
+    }
+}
+
+PlantingScrews::PlantingScrews(const char* screwName, QVector<double> transformation)
+{
+    strcpy(this->screwName, screwName);
+
+    if (strncmp("cone", screwName, 5) == 0) {
+        addCone();
+    } else {
+        addCustomScrew(screwName);
+    }
+    vtkNew<vtkMatrix4x4> matrix;
+    for (int i = 0; i < 16; i++) {
+        matrix->SetElement(i / 4, i % 4, transformation.at(i));
+    }
+    vtkNew<vtkTransform> t;
+    t->SetMatrix(matrix);
+    vtkNew<vtkTransformPolyDataFilter> filter;
+    filter->SetTransform(t);
+    filter->SetInputData(this->screwSource);
+    filter->Update();
+    this->screwSource = filter->GetOutput();
+    vtkPolyDataMapper* mapper = static_cast<vtkPolyDataMapper*>(this->screwActor->GetMapper());
+    mapper->SetInputData(this->screwSource);
+    mapper->Modified();
+
+    // create box widget and attach to coneActor
+    this->screwWidget = createBoxWidget();
+    if (strncmp("cone", screwName, 5) != 0) {
+        // for customize screws
+        // disable the scaling (screw size should be fixed)
+        this->screwWidget->HandlesOff();
+        this->screwWidget->ScalingEnabledOff();
     }
 }
 
@@ -91,9 +135,6 @@ void PlantingScrews::addCone()
     coneActor->GetProperty()->SetSpecular(0.4);
     coneActor->GetProperty()->SetSpecularPower(20);
     this->screwActor = coneActor;
-
-    // create box widget and attach to coneActor
-    this->screwWidget = createBoxWidget();
 }
 
 void PlantingScrews::addCustomScrew(const char * screwName)
@@ -111,11 +152,6 @@ void PlantingScrews::addCustomScrew(const char * screwName)
     vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
     this->screwActor = actor;
-
-    // create interactive widgets, disable the scaling (screw size should be fixed)
-    this->screwWidget = createBoxWidget();
-    this->screwWidget->HandlesOff();
-    this->screwWidget->ScalingEnabledOff();
 }
 
 vtkSmartPointer<vtkBoxWidget> PlantingScrews::createBoxWidget()

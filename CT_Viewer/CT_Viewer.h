@@ -25,6 +25,7 @@ public:
     void init2DViews();
     void loadSliceAndThreshold(double* sliceCenter, int* contrastThreshold);
     void loadCameraSettings(double* cameraPos, double* focalPoint);
+    void loadScrews(QVector<QPair<QString, QVector<double>>>& screwList);
 
 private:
     bool CT_uploaded = false; // CT_uploaded allows other buttons to function
@@ -37,6 +38,7 @@ private slots:
     void handleOpen();
     void handleSave();
     void handleAdd();
+    void addScrew(PlantingScrews* screw); // helper function for handleAdd
     void handleClear();
     void handleDetail();
 

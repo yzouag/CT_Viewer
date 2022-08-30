@@ -17,7 +17,7 @@ class CT_Image : public QObject
 public:
     CT_Image();
     ~CT_Image();
-    void loadDicomFromDirectory(QString path, QProgressDialog* dialog);
+    bool loadDicomFromDirectory(QString path, QProgressDialog* dialog);
     vtkSmartPointer<vtkImageData> getCTImageData();
     vtkSmartPointer<vtkImageReslice> getCTImageReslice(int axis);
     vtkSmartPointer<vtkImageAccumulate> getCTImageAccumulate();

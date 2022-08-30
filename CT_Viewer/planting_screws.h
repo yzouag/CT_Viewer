@@ -3,6 +3,7 @@
 #include <vtkActor.h>
 #include <vtkBoxWidget.h>
 #include <vtkSmartPointer.h>
+#include <QVector>
 
 class CT_2d_Widget;
 class CT_3d_Widget;
@@ -11,6 +12,7 @@ class PlantingScrews
 {
 public:
     PlantingScrews(const char* screwName);
+    PlantingScrews(const char* screwName, QVector<double> transformation);
     ~PlantingScrews();
     vtkSmartPointer<vtkBoxWidget> getScrewWidget();
     vtkSmartPointer<vtkActor> getScrewActor();
