@@ -51,6 +51,7 @@ CT_Viewer::CT_Viewer(CT_Image* ctImage, QProgressDialog* dialog, QWidget *parent
     connect(ui.clearButton, SIGNAL(clicked()), this, SLOT(handleClear()));
     connect(ui.detailButton, SIGNAL(clicked()), this, SLOT(handleDetail()));
     connect(ui.actionSet_Contrast, SIGNAL(triggered()), this, SLOT(handleSetContrast()));
+    connect(ui.actionMeasurements, SIGNAL(triggered()), this, SLOT(handleMeasurements()));
 
     // connect for 2D view interactions (cursor location update, reslice position update)
     connect(ctImage, &CT_Image::sliceCenterChange, ui.axialViewWidget, &CT_2d_Widget::updateWhenSliceCenterChange);
@@ -311,6 +312,20 @@ void CT_Viewer::handleDetail()
     detail_widget->setAttribute(Qt::WA_DeleteOnClose);
     detail_widget->setTableContent(this->ctImage->getMetaInfo());
     detail_widget->show();
+}
+
+void CT_Viewer::handleMeasurements()
+{
+    /*vtkNew<vtkNamedColors> colors;
+    vtkNew<vtkAngleWidget> angleWidget;
+    angleWidget->SetInteractor(renderWindowInteractor);
+    vtkNew<vtkAngleRepresentation2D> angleRep;
+    angleRep->GetRay1()->GetProperty()->SetColor(255, 0, 0);
+    angleRep->GetRay2()->GetProperty()->SetColor(255, 0, 0);
+    angleRep->GetArc()->GetProperty()->SetColor(colors->GetColor3d("cadmium_lemon").GetData());
+    angleRep->GetArc()->GetLabelTextProperty()->SetColor(colors->GetColor3d("naples_yellow_deep").GetData());
+    angleWidget->SetRepresentation(angleRep);
+    angleWidget->On();*/
 }
 
 void CT_Viewer::updateViews()

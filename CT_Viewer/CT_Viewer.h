@@ -41,6 +41,7 @@ private slots:
     void addScrew(PlantingScrews* screw); // helper function for handleAdd
     void handleClear();
     void handleDetail();
+    void handleMeasurements();
 
     void updateViews();
     void updateColors(vtkBoxWidget* widget, double r, double g, double b);

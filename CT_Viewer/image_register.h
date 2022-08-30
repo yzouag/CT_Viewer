@@ -32,7 +32,7 @@ public:
 
 private:
     // location of the registry
-    QString cachePath = "../cache/";
+    QString cachePath = "./cache/";
     // descriptor for the file
     QString fileName;
     QString filePath;

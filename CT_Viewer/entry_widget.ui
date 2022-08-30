@@ -51,7 +51,7 @@
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Author: Wilson</string>
+        <string>Version: 1.0</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>

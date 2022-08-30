@@ -27,13 +27,13 @@ Entry_Widget::~Entry_Widget()
 void Entry_Widget::loadRecentImages()
 {
     // load the directory, if not exists, skip, or put on list
-    if (!QDir("../cache/").exists()) {
+    if (!QDir("./cache/").exists()) {
         return;
     }
     ui.tabWidget->setCurrentWidget(this->ui.tab_2);
-    QStringList recentImageNameList = QDir("../cache/imageInfo").entryList(QDir::Files);
+    QStringList recentImageNameList = QDir("./cache/imageInfo").entryList(QDir::Files);
     for (QString fileName : recentImageNameList) {
-        QString completePath = "../cache/imageInfo/" + fileName;
+        QString completePath = "./cache/imageInfo/" + fileName;
         ImageRegister* im = new ImageRegister(completePath); // will be deleted in RecentImageListWidgetItem
         RecentImageListWidgetItem* newItem = new RecentImageListWidgetItem(im, QIcon(im->getImageThumbnail()), im->getFileName(), ui.recentImageListWidget);
         newItem->setForeground(QBrush(Qt::white));
@@ -47,12 +47,12 @@ void Entry_Widget::loadRecentImages()
 void Entry_Widget::loadRecentWorkspaces()
 {
     // load the directory, if not exists, skip, or put on list
-    if (!QDir("../cache/").exists()) {
+    if (!QDir("./cache/").exists()) {
         return;
     }
-    QStringList recentImageNameList = QDir("../cache/imageInfo").entryList(QDir::Files);
+    QStringList recentImageNameList = QDir("./cache/imageInfo").entryList(QDir::Files);
     for (QString fileName : recentImageNameList) {
-        QString completePath = "../cache/imageInfo/" + fileName;
+        QString completePath = "./cache/imageInfo/" + fileName;
         ImageRegister* im = new ImageRegister(completePath); // will be deleted in RecentImageListWidgetItem
         RecentImageListWidgetItem* newItem = new RecentImageListWidgetItem(im, QIcon(im->getWorkspaceThumbnail()), im->getFileName(), ui.recentWorkspaceListWidget);
         newItem->setForeground(QBrush(Qt::white));
